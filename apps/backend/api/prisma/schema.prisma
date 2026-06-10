@@ -1,15 +1,58 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  runtime      = "nodejs"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+/// Un utilisateur de l'application. Aucun mot de passe n'est stocke :
+/// l'authentification se fait exclusivement via les comptes OAuth lies.
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts      OAuthAccount[]
+  refreshTokens RefreshToken[]
+}
+
+enum OAuthProvider {
+  GOOGLE
+  MICROSOFT
+}
+
+/// Lien entre un User et un compte chez un fournisseur OAuth (Google / Microsoft).
+/// Un meme User peut avoir plusieurs comptes (un par provider).
+model OAuthAccount {
+  id                String        @id @default(uuid())
+  provider          OAuthProvider
+  providerAccountId String
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime      @default(now())
+
+  // Empeche tout doublon : un compte provider ne peut etre lie qu'a un seul User.
+  @@unique([provider, providerAccountId])
+}
+
+/// Refresh tokens emis par l'API. Seul le hash est stocke, jamais le token en clair.
+model RefreshToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
 }
