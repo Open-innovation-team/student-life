@@ -33,18 +33,19 @@ export default function ProfilScreen() {
     async function loadSession() {
       const response = await fetch('http://192.168.1.14:3001/api/users/me', {
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
       const userData = await response.json();
-      setFirstName(userData.firstName);
-      setLastName(userData.lastName);
-      setEmail(userData.email);
+      setFirstName(userData.firstName ?? null);
+      setLastName(userData.lastName ?? null);
+      setEmail(userData.email ?? null);
       setProfilPicture(userData.image ?? null);
       setEstablishment(userData.establishment ?? null);
       setSector(userData.sector ?? null);
       setStudyLevel(userData.studyLevel ?? null);
       setOriginalData({
-        firstName: userData.firstName,
-        lastName: userData.lastName,
+        firstName: userData.firstName ?? null,
+        lastName: userData.lastName ?? null,
         establishment: userData.establishment ?? null,
         sector: userData.sector ?? null,
         studyLevel: userData.studyLevel ?? null,
@@ -76,13 +77,13 @@ export default function ProfilScreen() {
       });
 
       if (!response.ok) {
-        // ❌ Erreur HTTP (400, 401, 500, etc.)
+        // Erreur HTTP (400, 401, 500, etc.)
         const error = await response.json();
         Alert.alert('Erreur', error.message || 'Impossible de mettre à jour');
         return;
       }
 
-      // ✅ Succès
+      // Succès
       const updatedUser = await response.json();
       setIsEditing(false);
       setOriginalData({
@@ -96,7 +97,7 @@ export default function ProfilScreen() {
       Alert.alert('Succès', 'Profil mis à jour');
       console.log('Profil mis à jour:', updatedUser);
     } catch (error) {
-      // ❌ Erreur réseau
+      // Erreur réseau
       Alert.alert('Erreur', 'Problème de connexion');
       console.error(error);
     }
