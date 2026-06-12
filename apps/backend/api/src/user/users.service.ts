@@ -8,6 +8,8 @@ const USER_SELECT = {
   id: true,
   firstName: true,
   lastName: true,
+  email: true,
+  image: true,
   establishment: true,
   sector: true,
   studyLevel: true,
