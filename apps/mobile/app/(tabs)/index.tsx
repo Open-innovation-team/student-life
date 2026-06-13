@@ -1,10 +1,12 @@
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { authClient } from '../../lib/auth-client';
 
 export default function HomeScreen() {
   const [firstName, setFirstName] = useState<string | null>(null);
-
+  const router = useRouter();
   useEffect(() => {
     async function loadSession() {
       const session = await authClient.getSession();
@@ -90,6 +92,30 @@ export default function HomeScreen() {
             <View className="bg-[#08415C] rounded-full h-2 w-1/2" />
           </View>
         </View>
+
+        {/* Widget guide des aides financières */}
+        <TouchableOpacity
+          className="bg-white rounded-2xl p-4 mb-8 shadow-sm"
+          onPress={() => router.push('/(tabs)/guide_aide_finance')}
+          activeOpacity={0.7}
+        >
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-3 flex-1">
+              <View className="w-10 h-10 bg-[#ABDAFC] rounded-xl items-center justify-center">
+                <Ionicons name="wallet" size={20} color="#08415C" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-[#08415C] font-bold text-base">
+                  Aides financières
+                </Text>
+                <Text className="text-gray-400 text-xs mt-0.5">
+                  APL, CROUS, bourses, transport…
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#08415C" />
+          </View>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );

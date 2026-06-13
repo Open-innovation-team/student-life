@@ -52,6 +52,7 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="guide_aide_finance" options={{ href: null }} />
     </Tabs>
   );
 }
