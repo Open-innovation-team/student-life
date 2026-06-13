@@ -4,6 +4,12 @@ import 'dotenv/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(3001); // A modifier par la suite pour run via notre .env
+
+  app.enableCors({
+    origin: ['http://localhost:8081', 'http://localhost:3000'],
+    credentials: true,
+  });
+
+  await app.listen(process.env.PORT ?? 3001);
 }
 void bootstrap();
