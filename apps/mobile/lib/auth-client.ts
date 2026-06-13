@@ -2,11 +2,13 @@ import { createAuthClient } from 'better-auth/react';
 import { Platform } from 'react-native';
 import { secureStorage } from './secure-storage';
 
+const apiHost = process.env.EXPO_PUBLIC_API_HOST ?? 'localhost';
+
 export const BASE_URL =
-  Platform.OS === 'web' ? 'http://localhost:3001' : 'http://10.61.8.11:3001'; // Modifier avec son IP : Windows -> ipconfig, Linux -> ifconfig
+  Platform.OS === 'web' ? 'http://localhost:3001' : `http://${apiHost}:3001`;
 
 export const ORIGIN =
-  Platform.OS === 'web' ? 'http://localhost:8081' : 'http://10.61.8.11:8081';
+  Platform.OS === 'web' ? 'http://localhost:8081' : `http://${apiHost}:8081`;
 
 export const authClient = createAuthClient({
   baseURL: BASE_URL,

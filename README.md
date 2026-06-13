@@ -7,6 +7,32 @@ npm run build    # builds apps in the correct order
 npm run lint     # runs lint across all apps
 ```
 
+### Configuration initiale (à faire une seule fois)
+
+#### 1. Backend — origines CORS autorisées
+
+Dans `apps/backend/api/.env`, ajoute ton IP locale à `BETTER_AUTH_TRUSTED_ORIGINS` :
+
+```bash
+# Windows : ipconfig | Linux/Mac : ip addr ou ifconfig
+BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:8081,http://localhost:3001,http://TON_IP:8081,http://TON_IP:3001
+```
+
+#### 2. Mobile — IP de l'API
+
+Copie le fichier template et renseigne ton IP :
+
+```bash
+cp apps/mobile/.env.example apps/mobile/.env
+# puis édite apps/mobile/.env :
+# EXPO_PUBLIC_API_HOST=TON_IP
+```
+
+> Le fichier `apps/mobile/.env` est gitignored — chaque dev le crée localement.
+> Ne jamais hardcoder d'IP dans le code source.
+
+---
+
 ### Local Development (3 Terminals)
 
 ```bash
