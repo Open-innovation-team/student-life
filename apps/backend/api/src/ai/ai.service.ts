@@ -104,7 +104,7 @@ rédige une fiche de révision claire et structurée en français, avec :
 - 3 à 6 points clés,
 - les définitions importantes,
 - une section "À retenir".
-Reste fidèle au contenu, n'invente rien.
+Reste fidèle au contenu, n'invente rien, ne me mets AUCUN emojies, Met des escpaces entre les différentes sections et pour chaque section met un titre.
 
 CONTENU :
 """

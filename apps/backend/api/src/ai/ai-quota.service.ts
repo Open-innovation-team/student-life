@@ -3,6 +3,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 /**
  * Quota MVP : compteur en mémoire par utilisateur, remis à zéro chaque jour.
  * (Suffisant tant que l'API tourne sur une seule instance.)
+ * Pour du multi-instance faire une refonte qui tape sur l'api de groq car offre gratuit tres bien en api + avec compte dev *10 de token en gratuit
  */
 @Injectable()
 export class AiQuotaService {
