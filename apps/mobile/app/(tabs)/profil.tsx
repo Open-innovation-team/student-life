@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Platform } from 'react-native';
-import { authClient } from '../../lib/auth-client';
+import { authClient, BASE_URL, ORIGIN } from '../../lib/auth-client';
 import { userUpdateSchema } from '../../lib/schemas/user';
 import { useEffect, useState } from 'react';
 
@@ -31,8 +31,8 @@ export default function ProfilScreen() {
 
   useEffect(() => {
     async function loadSession() {
-      const response = await fetch('http://192.168.1.14:3001/api/users/me', {
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(`${BASE_URL}/api/users/me`, {
+        headers: { 'Content-Type': 'application/json', Origin: ORIGIN },
         credentials: 'include',
       });
       const userData = await response.json();
@@ -69,9 +69,9 @@ export default function ProfilScreen() {
     }
 
     try {
-      const response = await fetch('http://192.168.1.14:3001/api/users/me', {
+      const response = await fetch(`${BASE_URL}/api/users/me`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Origin: ORIGIN },
         credentials: 'include',
         body: JSON.stringify(validation.data),
       });
