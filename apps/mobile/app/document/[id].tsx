@@ -8,6 +8,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -110,7 +111,34 @@ export default function DocumentDetailScreen() {
             </View>
           ) : summary ? (
             <>
-              <Text className="text-gray-700 leading-6">{summary.content}</Text>
+              <Markdown
+                style={{
+                  body: {
+                    color: '#374151',
+                    fontSize: 14,
+                    lineHeight: 22,
+                  },
+                  heading1: {
+                    color: '#08415C',
+                    fontWeight: 'bold',
+                    marginBottom: 4,
+                  },
+                  heading2: {
+                    color: '#08415C',
+                    fontWeight: 'bold',
+                    marginBottom: 4,
+                  },
+                  heading3: {
+                    color: '#08415C',
+                    fontWeight: '600',
+                  },
+                  strong: { fontWeight: 'bold' },
+                  bullet_list: { marginVertical: 4 },
+                  ordered_list: { marginVertical: 4 },
+                }}
+              >
+                {summary.content}
+              </Markdown>
               <TouchableOpacity
                 className="border border-[#08415C] rounded-xl items-center py-3 mt-4"
                 onPress={() => handleSummarize(true)}
