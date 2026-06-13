@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 
@@ -63,7 +63,12 @@ export class ExpensesService {
   async update(id: string, userId: string, dto: UpdateExpenseDto) {
     await this.findOwned(id, userId);
 
-    const data: Prisma.ExpenseUpdateInput = {};
+    const data: {
+      amountCents?: number;
+      category?: string;
+      label?: string | null;
+      date?: Date;
+    } = {};
     if (dto.amountCents !== undefined) data.amountCents = dto.amountCents;
     if (dto.category !== undefined) data.category = dto.category;
     if (dto.label !== undefined) data.label = dto.label.trim() || null;
