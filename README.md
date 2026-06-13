@@ -37,13 +37,13 @@ cp apps/mobile/.env.example apps/mobile/.env
 
 ```bash
 # Terminal 1: web
-npm run dev -w web
+npm run dev -w @student-life/web
 
 # Terminal 2: mobile
-npm run dev -w mobile
+npm run dev -w @student-life/mobile
 
 # Terminal 3: api
-npm run dev -w api
+npm run dev -w @student-life/api
 ```
 
 ## Monorepo Structure
