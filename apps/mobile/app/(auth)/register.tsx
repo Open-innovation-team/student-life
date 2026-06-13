@@ -15,19 +15,34 @@ import { authClient } from '../../lib/auth-client';
 export default function RegisterScreen() {
   const lastNameRef = useRef<RNTextInput>(null);
   const emailRef = useRef<RNTextInput>(null);
+  const sectorRef = useRef<RNTextInput>(null);
+  const establishmentRef = useRef<RNTextInput>(null);
+  const studyLevelRef = useRef<RNTextInput>(null);
   const passwordRef = useRef<RNTextInput>(null);
   const confirmPasswordRef = useRef<RNTextInput>(null);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [sector, setSector] = useState('');
+  const [establishment, setEstablishment] = useState('');
+  const [studyLevel, setStudyLevel] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = useCallback(async () => {
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+    if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !sector ||
+      !establishment ||
+      !studyLevel ||
+      !password ||
+      !confirmPassword
+    ) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires');
       return;
     }
     if (password !== confirmPassword) {
@@ -42,6 +57,9 @@ export default function RegisterScreen() {
       name: `${firstName} ${lastName}`,
       firstName,
       lastName,
+      sector,
+      establishment,
+      studyLevel,
     });
     setLoading(false);
 
@@ -51,7 +69,16 @@ export default function RegisterScreen() {
     }
     console.log('Inscrit :', data);
     router.replace('/(tabs)');
-  }, [firstName, lastName, email, password, confirmPassword]);
+  }, [
+    firstName,
+    lastName,
+    email,
+    sector,
+    establishment,
+    studyLevel,
+    password,
+    confirmPassword,
+  ]);
 
   return (
     <ScrollView
@@ -92,12 +119,13 @@ export default function RegisterScreen() {
 
         {/* Inputs */}
         <View className="gap-3">
+          {/* Prénom + Nom */}
           <View className="flex-row gap-3">
             <TextInput
               className="flex-1 min-w-0 bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
               style={{
-                paddingVertical: Platform.OS === 'web' ? 14 : 18,
-                fontSize: Platform.OS === 'web' ? 14 : 16,
+                paddingVertical: Platform.OS === 'web' ? 10 : 14,
+                fontSize: Platform.OS === 'web' ? 10 : 12,
               }}
               placeholder="Prénom"
               placeholderTextColor="#9ca3af"
@@ -111,8 +139,8 @@ export default function RegisterScreen() {
               ref={lastNameRef}
               className="flex-1 min-w-0 bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
               style={{
-                paddingVertical: Platform.OS === 'web' ? 14 : 18,
-                fontSize: Platform.OS === 'web' ? 14 : 16,
+                paddingVertical: Platform.OS === 'web' ? 10 : 14,
+                fontSize: Platform.OS === 'web' ? 10 : 12,
               }}
               placeholder="Nom"
               placeholderTextColor="#9ca3af"
@@ -124,12 +152,13 @@ export default function RegisterScreen() {
             />
           </View>
 
+          {/* Email */}
           <TextInput
             ref={emailRef}
             className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
             style={{
-              paddingVertical: Platform.OS === 'web' ? 14 : 18,
-              fontSize: Platform.OS === 'web' ? 14 : 16,
+              paddingVertical: Platform.OS === 'web' ? 10 : 14,
+              fontSize: Platform.OS === 'web' ? 10 : 12,
             }}
             placeholder="Email"
             placeholderTextColor="#9ca3af"
@@ -138,16 +167,68 @@ export default function RegisterScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             returnKeyType="next"
+            onSubmitEditing={() => sectorRef.current?.focus()}
+            submitBehavior="submit"
+          />
+
+          {/* Filière */}
+          <TextInput
+            ref={sectorRef}
+            className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
+            style={{
+              paddingVertical: Platform.OS === 'web' ? 10 : 14,
+              fontSize: Platform.OS === 'web' ? 10 : 12,
+            }}
+            placeholder="Filière "
+            placeholderTextColor="#9ca3af"
+            value={sector}
+            onChangeText={setSector}
+            returnKeyType="next"
+            onSubmitEditing={() => establishmentRef.current?.focus()}
+            submitBehavior="submit"
+          />
+
+          {/* Établissement */}
+          <TextInput
+            ref={establishmentRef}
+            className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
+            style={{
+              paddingVertical: Platform.OS === 'web' ? 10 : 14,
+              fontSize: Platform.OS === 'web' ? 10 : 12,
+            }}
+            placeholder="Établissement "
+            placeholderTextColor="#9ca3af"
+            value={establishment}
+            onChangeText={setEstablishment}
+            returnKeyType="next"
+            onSubmitEditing={() => studyLevelRef.current?.focus()}
+            submitBehavior="submit"
+          />
+
+          {/* Niveau d'études */}
+          <TextInput
+            ref={studyLevelRef}
+            className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
+            style={{
+              paddingVertical: Platform.OS === 'web' ? 10 : 14,
+              fontSize: Platform.OS === 'web' ? 10 : 12,
+            }}
+            placeholder="Niveau d'études "
+            placeholderTextColor="#9ca3af"
+            value={studyLevel}
+            onChangeText={setStudyLevel}
+            returnKeyType="next"
             onSubmitEditing={() => passwordRef.current?.focus()}
             submitBehavior="submit"
           />
 
+          {/* Mot de passe */}
           <TextInput
             ref={passwordRef}
             className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
             style={{
-              paddingVertical: Platform.OS === 'web' ? 14 : 18,
-              fontSize: Platform.OS === 'web' ? 14 : 16,
+              paddingVertical: Platform.OS === 'web' ? 10 : 14,
+              fontSize: Platform.OS === 'web' ? 10 : 12,
             }}
             placeholder="Mot de passe"
             placeholderTextColor="#9ca3af"
@@ -159,12 +240,13 @@ export default function RegisterScreen() {
             submitBehavior="submit"
           />
 
+          {/* Confirmer mot de passe */}
           <TextInput
             ref={confirmPasswordRef}
             className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
             style={{
-              paddingVertical: Platform.OS === 'web' ? 14 : 18,
-              fontSize: Platform.OS === 'web' ? 14 : 16,
+              paddingVertical: Platform.OS === 'web' ? 10 : 14,
+              fontSize: Platform.OS === 'web' ? 10 : 12,
             }}
             placeholder="Confirmer le mot de passe"
             placeholderTextColor="#9ca3af"
