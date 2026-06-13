@@ -10,55 +10,64 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Platform } from 'react-native';
 import { authClient, BASE_URL, ORIGIN } from '../../lib/auth-client';
+import { useUser } from '../../lib/user-context';
 import { userUpdateSchema } from '../../lib/schemas/user';
 import { useEffect, useState } from 'react';
 
 export default function ProfilScreen() {
   const { editing } = useLocalSearchParams<{ editing?: string }>();
+  const {
+    firstName: ctxFirstName,
+    lastName: ctxLastName,
+    email: ctxEmail,
+    image: ctxImage,
+    establishment: ctxEstablishment,
+    sector: ctxSector,
+    studyLevel: ctxStudyLevel,
+    refresh,
+  } = useUser();
+
   const [firstName, setFirstName] = useState<string | null>(null);
   const [lastName, setLastName] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
-  const [profilPicture, setProfilPicture] = useState<string | null>(null);
   const [establishment, setEstablishment] = useState<string | null>(null);
   const [sector, setSector] = useState<string | null>(null);
   const [studyLevel, setStudyLevel] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [originalData, setOriginalData] = useState({
-    firstName: null,
-    lastName: null,
-    establishment: null,
-    sector: null,
-    studyLevel: null,
+    firstName: null as string | null,
+    lastName: null as string | null,
+    establishment: null as string | null,
+    sector: null as string | null,
+    studyLevel: null as string | null,
   });
+
+  useEffect(() => {
+    setFirstName(ctxFirstName);
+    setLastName(ctxLastName);
+    setEmail(ctxEmail);
+    setEstablishment(ctxEstablishment);
+    setSector(ctxSector);
+    setStudyLevel(ctxStudyLevel);
+    setOriginalData({
+      firstName: ctxFirstName,
+      lastName: ctxLastName,
+      establishment: ctxEstablishment,
+      sector: ctxSector,
+      studyLevel: ctxStudyLevel,
+    });
+  }, [
+    ctxFirstName,
+    ctxLastName,
+    ctxEmail,
+    ctxEstablishment,
+    ctxSector,
+    ctxStudyLevel,
+  ]);
 
   useEffect(() => {
     if (editing === 'true') setIsEditing(true);
   }, [editing]);
-
-  useEffect(() => {
-    async function loadSession() {
-      const response = await fetch(`${BASE_URL}/api/users/me`, {
-        headers: { 'Content-Type': 'application/json', Origin: ORIGIN },
-        credentials: 'include',
-      });
-      const userData = await response.json();
-      setFirstName(userData.firstName ?? null);
-      setLastName(userData.lastName ?? null);
-      setEmail(userData.email ?? null);
-      setProfilPicture(userData.image ?? null);
-      setEstablishment(userData.establishment ?? null);
-      setSector(userData.sector ?? null);
-      setStudyLevel(userData.studyLevel ?? null);
-      setOriginalData({
-        firstName: userData.firstName ?? null,
-        lastName: userData.lastName ?? null,
-        establishment: userData.establishment ?? null,
-        sector: userData.sector ?? null,
-        studyLevel: userData.studyLevel ?? null,
-      });
-    }
-    loadSession();
-  }, []);
 
   const handleSave = async () => {
     const validation = userUpdateSchema.safeParse({
@@ -88,21 +97,11 @@ export default function ProfilScreen() {
         return;
       }
 
-      const updatedUser = await response.json();
       setIsEditing(false);
-      setOriginalData({
-        firstName: updatedUser.firstName ?? firstName,
-        lastName: updatedUser.lastName ?? lastName,
-        sector: updatedUser.sector ?? sector,
-        studyLevel: updatedUser.studyLevel ?? studyLevel,
-        establishment: updatedUser.establishment ?? establishment,
-      });
-
+      await refresh();
       Alert.alert('Succès', 'Profil mis à jour');
-      console.log('Profil mis à jour:', updatedUser);
-    } catch (error) {
+    } catch {
       Alert.alert('Erreur', 'Problème de connexion');
-      console.error(error);
     }
   };
 
@@ -117,11 +116,7 @@ export default function ProfilScreen() {
     } else {
       Alert.alert('Déconnexion', 'Voulez-vous vraiment vous déconnecter ?', [
         { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Se déconnecter',
-          style: 'destructive',
-          onPress: doLogout,
-        },
+        { text: 'Se déconnecter', style: 'destructive', onPress: doLogout },
       ]);
     }
   };
@@ -132,9 +127,9 @@ export default function ProfilScreen() {
     <View className="flex-1 bg-[#E5FCFF] items-center justify-center px-6">
       <Text className="text-[#08415C] text-xl font-bold m-2">Mon Profil</Text>
       {/* Image de profil */}
-      {profilPicture ? (
+      {ctxImage ? (
         <Image
-          source={{ uri: profilPicture }}
+          source={{ uri: ctxImage }}
           className="w-24 h-24 rounded-full m-4"
         />
       ) : (

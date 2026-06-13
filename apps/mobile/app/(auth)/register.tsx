@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -31,7 +31,7 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = useCallback(async () => {
+  const handleRegister = async () => {
     if (
       !firstName ||
       !lastName ||
@@ -42,7 +42,7 @@ export default function RegisterScreen() {
       !password ||
       !confirmPassword
     ) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires');
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
       return;
     }
     if (password !== confirmPassword) {
@@ -50,8 +50,7 @@ export default function RegisterScreen() {
       return;
     }
     setLoading(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (authClient.signUp.email as any)({
+    const { error } = await authClient.signUp.email({
       email,
       password,
       name: `${firstName} ${lastName}`,
@@ -67,18 +66,8 @@ export default function RegisterScreen() {
       Alert.alert("Erreur d'inscription", error.message);
       return;
     }
-    console.log('Inscrit :', data);
     router.replace('/(tabs)');
-  }, [
-    firstName,
-    lastName,
-    email,
-    sector,
-    establishment,
-    studyLevel,
-    password,
-    confirmPassword,
-  ]);
+  };
 
   return (
     <ScrollView
@@ -179,7 +168,7 @@ export default function RegisterScreen() {
               paddingVertical: Platform.OS === 'web' ? 10 : 14,
               fontSize: Platform.OS === 'web' ? 10 : 12,
             }}
-            placeholder="Filière "
+            placeholder="Filière"
             placeholderTextColor="#9ca3af"
             value={sector}
             onChangeText={setSector}
@@ -196,7 +185,7 @@ export default function RegisterScreen() {
               paddingVertical: Platform.OS === 'web' ? 10 : 14,
               fontSize: Platform.OS === 'web' ? 10 : 12,
             }}
-            placeholder="Établissement "
+            placeholder="Établissement"
             placeholderTextColor="#9ca3af"
             value={establishment}
             onChangeText={setEstablishment}
@@ -213,7 +202,7 @@ export default function RegisterScreen() {
               paddingVertical: Platform.OS === 'web' ? 10 : 14,
               fontSize: Platform.OS === 'web' ? 10 : 12,
             }}
-            placeholder="Niveau d'études "
+            placeholder="Niveau d'études"
             placeholderTextColor="#9ca3af"
             value={studyLevel}
             onChangeText={setStudyLevel}
