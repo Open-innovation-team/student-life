@@ -60,6 +60,11 @@ export class DocumentsService {
     return document;
   }
 
+  async getFilePath(id: string, userId: string) {
+    const document = await this.findOwned(id, userId);
+    return { path: document.path, filename: document.filename };
+  }
+
   async getOne(id: string, userId: string) {
     await this.findOwned(id, userId);
     return prisma.document.findUnique({

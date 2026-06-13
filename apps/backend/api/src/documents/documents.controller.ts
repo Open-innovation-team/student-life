@@ -8,15 +8,16 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UnauthorizedException,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { diskStorage } from 'multer';
 import { randomUUID } from 'crypto';
-import { mkdirSync } from 'fs';
+import { createReadStream, mkdirSync } from 'fs';
 import { extname } from 'path';
 import { auth } from '../lib/auth';
 import { AiQuotaService } from '../ai/ai-quota.service';
@@ -88,6 +89,25 @@ export class DocumentsController {
   async getOne(@Req() req: Request, @Param('id') id: string) {
     const user = await this.getSession(req);
     return this.documentsService.getOne(id, user.id);
+  }
+
+  @Get(':id/file')
+  async file(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Param('id') id: string,
+  ) {
+    const user = await this.getSession(req);
+    const { path, filename } = await this.documentsService.getFilePath(
+      id,
+      user.id,
+    );
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${encodeURIComponent(filename)}"`,
+    );
+    createReadStream(path).pipe(res);
   }
 
   @Delete(':id')

@@ -2,10 +2,12 @@ import { useCallback, useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
   Alert,
+  Linking,
   Platform,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
@@ -14,6 +16,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import {
   DocumentItem,
   deleteDocument,
+  documentFileUrl,
   listDocuments,
   uploadDocument,
 } from '../../lib/api';
@@ -33,8 +36,13 @@ function showError(title: string, message: string) {
 
 export default function DocumentsScreen() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+
+  const filtered = documents.filter((d) =>
+    d.filename.toLowerCase().includes(query.trim().toLowerCase()),
+  );
 
   const load = useCallback(async () => {
     try {
@@ -94,11 +102,40 @@ export default function DocumentsScreen() {
     }
   };
 
+  const handleView = (doc: DocumentItem) => {
+    const url = documentFileUrl(doc.id);
+    if (Platform.OS === 'web') {
+      window.open(url, '_blank');
+    } else {
+      Linking.openURL(url).catch(() =>
+        showError('Ouverture impossible', 'Impossible d’ouvrir le PDF.'),
+      );
+    }
+  };
+
   return (
     <View className="flex-1 bg-[#E5FCFF] px-4 pt-12">
       <Text className="text-[#08415C] text-xl font-bold mb-4 text-center">
         Mes Documents
       </Text>
+
+      <View className="bg-white rounded-xl px-3 mb-4 flex-row items-center gap-2">
+        <Ionicons name="search" color="#08415C" size={18} />
+        <TextInput
+          className="flex-1 py-3 text-[#08415C]"
+          placeholder="Rechercher un document…"
+          placeholderTextColor="#9ca3af"
+          value={query}
+          onChangeText={setQuery}
+          autoCorrect={false}
+          autoCapitalize="none"
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => setQuery('')} hitSlop={8}>
+            <Ionicons name="close-circle" color="#9ca3af" size={18} />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <TouchableOpacity
         className="bg-[#08415C] rounded-xl items-center py-4 mb-4 flex-row justify-center gap-2"
@@ -127,9 +164,16 @@ export default function DocumentsScreen() {
             Aucun document.{'\n'}Uploade un PDF de cours pour commencer !
           </Text>
         </View>
+      ) : filtered.length === 0 ? (
+        <View className="items-center mt-12">
+          <Ionicons name="search-outline" color="#9ca3af" size={48} />
+          <Text className="text-gray-400 mt-2 text-center">
+            Aucun document ne correspond à « {query.trim()} ».
+          </Text>
+        </View>
       ) : (
         <FlatList
-          data={documents}
+          data={filtered}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: 24 }}
           renderItem={({ item }) => (
@@ -158,6 +202,13 @@ export default function DocumentsScreen() {
                 className="p-2"
               >
                 <Ionicons name="trash-outline" color="#ef4444" size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleView(item)}
+                hitSlop={8}
+                className="p-2"
+              >
+                <Ionicons name="eye-outline" color="#08415C" size={20} />
               </TouchableOpacity>
             </TouchableOpacity>
           )}

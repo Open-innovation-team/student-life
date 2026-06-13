@@ -70,6 +70,10 @@ export function deleteDocument(id: string): Promise<{ deleted: boolean }> {
   return apiFetch(`/api/documents/${id}`, { method: 'DELETE' });
 }
 
+export function documentFileUrl(id: string): string {
+  return `${BASE_URL}/api/documents/${id}/file`;
+}
+
 export function uploadDocument(
   asset: DocumentPickerAsset,
 ): Promise<DocumentItem> {
