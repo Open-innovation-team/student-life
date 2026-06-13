@@ -1,8 +1,20 @@
-import { Tabs } from 'expo-router';
+import { useEffect } from 'react';
+import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { authClient } from '../../lib/auth-client';
 import { UserProvider } from '../../lib/user-context';
 
 export default function TabsLayout() {
+  useEffect(() => {
+    async function checkSession() {
+      const session = await authClient.getSession();
+      if (!session?.data?.user) {
+        router.replace('/(auth)/login');
+      }
+    }
+    checkSession();
+  }, []);
+
   return (
     <UserProvider>
       <Tabs
