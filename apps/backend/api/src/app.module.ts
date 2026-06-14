@@ -7,6 +7,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { BudgetsModule } from './budgets/budgets.module';
 import { AccountModule } from './account/account.module';
+import { ApplicationsModule } from './applications/applications.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AccountModule } from './account/account.module';
     ExpensesModule,
     BudgetsModule,
     AccountModule,
+    ApplicationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
