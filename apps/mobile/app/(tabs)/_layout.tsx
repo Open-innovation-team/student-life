@@ -1,9 +1,12 @@
 import { View } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Fab } from '../../components/fab';
 
 export default function TabsLayout() {
+  const pathname = usePathname();
+  const isFinances = pathname === '/finances';
+
   return (
     <View className="flex-1">
       <Tabs
@@ -65,7 +68,7 @@ export default function TabsLayout() {
           }}
         />
       </Tabs>
-      <Fab />
+      {isFinances && <Fab />}
     </View>
   );
 }
