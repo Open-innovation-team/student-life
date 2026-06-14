@@ -23,6 +23,45 @@ model User {
   accounts      Account[]
   sessions      Session[]
   documents     Document[]
+  expenses      Expense[]
+  budgets       Budget[]
+  categories    Category[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, name])
+}
+
+model Expense {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountCents Int
+  category   String
+  label      String?
+  date       DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    String?  // null = budget mensuel global
+  month       String   // "YYYY-MM"
+  amountCents Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, category, month])
 }
 
 model Document {
