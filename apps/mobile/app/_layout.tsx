@@ -2,6 +2,7 @@ import '../global';
 import { useEffect, useState, useRef } from 'react';
 import { Stack, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Linking from 'expo-linking';
 import { View, Text } from 'react-native';
 import { authClient } from '../lib/auth-client';
 
@@ -26,6 +27,11 @@ export default function RootLayout() {
     hasNavigated.current = true;
 
     async function checkSession() {
+      // Si l'app est ouverte via un deep link de reset, laisser expo-router
+      // router vers /reset-password au lieu de forcer la redirection session.
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl?.includes('reset-password')) return;
+
       const session = await authClient.getSession();
       if (session?.data?.user) {
         router.replace('/(tabs)');
