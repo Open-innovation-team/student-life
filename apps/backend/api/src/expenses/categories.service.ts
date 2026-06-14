@@ -3,15 +3,15 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import { PREDEFINED_CATEGORIES } from './categories';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class CategoriesService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async list(userId: string) {
-    const custom = await prisma.category.findMany({
+    const custom = await this.prisma.category.findMany({
       where: { userId },
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
@@ -27,14 +27,14 @@ export class CategoriesService {
       PREDEFINED_CATEGORIES.some(
         (c) => c.toLowerCase() === name.toLowerCase(),
       ) ||
-      (await prisma.category.findUnique({
+      (await this.prisma.category.findUnique({
         where: { userId_name: { userId, name } },
       })) !== null;
     if (alreadyExists) {
       throw new ConflictException('Cette catégorie existe déjà');
     }
 
-    return prisma.category.create({
+    return this.prisma.category.create({
       data: { userId, name },
       select: { id: true, name: true },
     });

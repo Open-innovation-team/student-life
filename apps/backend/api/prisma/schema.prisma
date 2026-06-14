@@ -27,6 +27,7 @@ model User {
   budgets       Budget[]
   categories    Category[]
   dataExports   DataExport[]
+  applications  Application[]
 }
 
 model DataExport {
@@ -39,7 +40,6 @@ model DataExport {
   createdAt DateTime @default(now())
 
   @@index([userId])
-  applications  Application[]
 }
 
 model Application {

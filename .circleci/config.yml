@@ -91,6 +91,24 @@ jobs:
           name: Tests Mobile
           command: npx turbo run test --filter=@student-life/mobile
 
+  security-scan:
+    docker:
+      - image: cimg/node:22.12
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+      - run:
+          name: Audit des dépendances (échec si high/critical)
+          command: npm audit --audit-level=high
+      - run:
+          name: Scan de secrets (gitleaks)
+          command: |
+            curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz \
+              | tar -xz gitleaks
+            ./gitleaks detect --source . --no-banner --redact
+
 workflows:
   ci:
     jobs:
@@ -98,3 +116,4 @@ workflows:
       - test-api
       - test-web
       - test-mobile
+      - security-scan

@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 const USER_SELECT = {
   id: true,
@@ -18,15 +16,17 @@ const USER_SELECT = {
 
 @Injectable()
 export class UsersService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async findById(userId: string) {
-    return prisma.user.findUnique({
+    return this.prisma.user.findUnique({
       where: { id: userId },
       select: USER_SELECT,
     });
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    return prisma.user.update({
+    return this.prisma.user.update({
       where: { id: userId },
       data: dto,
       select: USER_SELECT,
