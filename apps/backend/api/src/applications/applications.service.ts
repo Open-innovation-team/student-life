@@ -27,6 +27,28 @@ const SELECT = {
 
 type Status = { status: string; lastStatusAt: Date };
 
+type Application = {
+  id: string;
+  company: string;
+  position: string;
+  platform: string | null;
+  status: string;
+  sentAt: Date;
+  notes: string | null;
+  cvDocumentId: string | null;
+  lmDocumentId: string | null;
+  lastStatusAt: Date;
+};
+
+type ApplicationWithFollowUp = Application & { needsFollowUp: boolean };
+
+type ApplicationStats = {
+  total: number;
+  byStatus: Record<string, number>;
+  interviews: number;
+  responseRate: number;
+};
+
 type ApplicationUpdateData = {
   company?: string;
   position?: string;
@@ -55,7 +77,7 @@ function csvCell(value: string): string {
 
 @Injectable()
 export class ApplicationsService {
-  async list(userId: string) {
+  async list(userId: string): Promise<ApplicationWithFollowUp[]> {
     const apps = await prisma.application.findMany({
       where: { userId },
       orderBy: { sentAt: 'desc' },
@@ -64,12 +86,12 @@ export class ApplicationsService {
     return apps.map((a) => ({ ...a, needsFollowUp: needsFollowUp(a) }));
   }
 
-  async findOne(id: string, userId: string) {
+  async findOne(id: string, userId: string): Promise<ApplicationWithFollowUp> {
     const app = await this.findOwned(id, userId);
     return { ...app, needsFollowUp: needsFollowUp(app) };
   }
 
-  create(userId: string, dto: CreateApplicationDto) {
+  create(userId: string, dto: CreateApplicationDto): Promise<Application> {
     return prisma.application.create({
       data: {
         userId,
@@ -86,7 +108,11 @@ export class ApplicationsService {
     });
   }
 
-  async update(id: string, userId: string, dto: UpdateApplicationDto) {
+  async update(
+    id: string,
+    userId: string,
+    dto: UpdateApplicationDto,
+  ): Promise<Application> {
     const current = await this.findOwned(id, userId);
 
     const data: ApplicationUpdateData = {};
@@ -107,13 +133,13 @@ export class ApplicationsService {
     return prisma.application.update({ where: { id }, data, select: SELECT });
   }
 
-  async delete(id: string, userId: string) {
+  async delete(id: string, userId: string): Promise<{ deleted: true }> {
     await this.findOwned(id, userId);
     await prisma.application.delete({ where: { id } });
     return { deleted: true };
   }
 
-  async stats(userId: string) {
+  async stats(userId: string): Promise<ApplicationStats> {
     const apps = await prisma.application.findMany({
       where: { userId },
       select: { status: true },
@@ -139,7 +165,7 @@ export class ApplicationsService {
     };
   }
 
-  async exportCsv(userId: string) {
+  async exportCsv(userId: string): Promise<string> {
     const apps = await prisma.application.findMany({
       where: { userId },
       orderBy: { sentAt: 'desc' },
@@ -161,7 +187,7 @@ export class ApplicationsService {
     return [header, ...rows].join('\n');
   }
 
-  private async findOwned(id: string, userId: string) {
+  private async findOwned(id: string, userId: string): Promise<Application> {
     const app = await prisma.application.findFirst({
       where: { id, userId },
       select: SELECT,
