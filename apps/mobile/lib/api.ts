@@ -246,6 +246,8 @@ export type DataExportResult = {
 // valable 24h.
 export function requestDataExport(): Promise<DataExportResult> {
   return apiFetch('/api/account/export', { method: 'POST' });
+}
+
 /* Applications */
 
 export type Application = {
