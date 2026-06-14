@@ -113,8 +113,8 @@ export default function RegisterScreen() {
             <TextInput
               className="flex-1 min-w-0 bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
               style={{
-                paddingVertical: Platform.OS === 'web' ? 10 : 14,
-                fontSize: Platform.OS === 'web' ? 10 : 12,
+                paddingVertical: Platform.OS === 'web' ? 14 : 14,
+                fontSize: Platform.OS === 'web' ? 14 : 12,
               }}
               placeholder="Prénom"
               placeholderTextColor="#9ca3af"
@@ -128,8 +128,8 @@ export default function RegisterScreen() {
               ref={lastNameRef}
               className="flex-1 min-w-0 bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
               style={{
-                paddingVertical: Platform.OS === 'web' ? 10 : 14,
-                fontSize: Platform.OS === 'web' ? 10 : 12,
+                paddingVertical: Platform.OS === 'web' ? 14 : 14,
+                fontSize: Platform.OS === 'web' ? 14 : 12,
               }}
               placeholder="Nom"
               placeholderTextColor="#9ca3af"
@@ -146,8 +146,8 @@ export default function RegisterScreen() {
             ref={emailRef}
             className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
             style={{
-              paddingVertical: Platform.OS === 'web' ? 10 : 14,
-              fontSize: Platform.OS === 'web' ? 10 : 12,
+              paddingVertical: Platform.OS === 'web' ? 14 : 14,
+              fontSize: Platform.OS === 'web' ? 14 : 12,
             }}
             placeholder="Email"
             placeholderTextColor="#9ca3af"
@@ -165,8 +165,8 @@ export default function RegisterScreen() {
             ref={sectorRef}
             className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
             style={{
-              paddingVertical: Platform.OS === 'web' ? 10 : 14,
-              fontSize: Platform.OS === 'web' ? 10 : 12,
+              paddingVertical: Platform.OS === 'web' ? 14 : 14,
+              fontSize: Platform.OS === 'web' ? 14 : 12,
             }}
             placeholder="Filière"
             placeholderTextColor="#9ca3af"
@@ -182,8 +182,8 @@ export default function RegisterScreen() {
             ref={establishmentRef}
             className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
             style={{
-              paddingVertical: Platform.OS === 'web' ? 10 : 14,
-              fontSize: Platform.OS === 'web' ? 10 : 12,
+              paddingVertical: Platform.OS === 'web' ? 14 : 14,
+              fontSize: Platform.OS === 'web' ? 14 : 12,
             }}
             placeholder="Établissement"
             placeholderTextColor="#9ca3af"
@@ -199,8 +199,8 @@ export default function RegisterScreen() {
             ref={studyLevelRef}
             className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
             style={{
-              paddingVertical: Platform.OS === 'web' ? 10 : 14,
-              fontSize: Platform.OS === 'web' ? 10 : 12,
+              paddingVertical: Platform.OS === 'web' ? 14 : 14,
+              fontSize: Platform.OS === 'web' ? 14 : 12,
             }}
             placeholder="Niveau d'études"
             placeholderTextColor="#9ca3af"
@@ -216,8 +216,8 @@ export default function RegisterScreen() {
             ref={passwordRef}
             className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
             style={{
-              paddingVertical: Platform.OS === 'web' ? 10 : 14,
-              fontSize: Platform.OS === 'web' ? 10 : 12,
+              paddingVertical: Platform.OS === 'web' ? 14 : 14,
+              fontSize: Platform.OS === 'web' ? 14 : 12,
             }}
             placeholder="Mot de passe"
             placeholderTextColor="#9ca3af"
@@ -234,8 +234,8 @@ export default function RegisterScreen() {
             ref={confirmPasswordRef}
             className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
             style={{
-              paddingVertical: Platform.OS === 'web' ? 10 : 14,
-              fontSize: Platform.OS === 'web' ? 10 : 12,
+              paddingVertical: Platform.OS === 'web' ? 14 : 14,
+              fontSize: Platform.OS === 'web' ? 14 : 12,
             }}
             placeholder="Confirmer le mot de passe"
             placeholderTextColor="#9ca3af"
