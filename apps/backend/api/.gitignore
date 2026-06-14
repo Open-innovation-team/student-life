@@ -49,6 +49,9 @@ lerna-debug.log*
 # fichiers uploadés (PDF)
 /uploads
 
+# exports RGPD générés (ZIP temporaires, lien 24h)
+/exports
+
 # Runtime data
 pids
 *.pid

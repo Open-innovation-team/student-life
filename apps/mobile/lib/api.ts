@@ -235,3 +235,82 @@ export function upsertBudget(input: {
 export function budgetExportUrl(month: string): string {
   return `${BASE_URL}/api/budgets/export?month=${month}`;
 }
+
+export type DataExportResult = {
+  downloadUrl: string;
+  filename: string;
+  expiresAt: string;
+};
+
+// RGPD — génère l'export ZIP de toutes les données et renvoie un lien sécurisé
+// valable 24h.
+export function requestDataExport(): Promise<DataExportResult> {
+  return apiFetch('/api/account/export', { method: 'POST' });
+}
+
+/* Applications */
+
+export type Application = {
+  id: string;
+  company: string;
+  position: string;
+  platform: string | null;
+  status: string;
+  sentAt: string;
+  notes: string | null;
+  cvDocumentId: string | null;
+  lmDocumentId: string | null;
+  lastStatusAt: string;
+  needsFollowUp: boolean;
+};
+
+export type ApplicationInput = {
+  company: string;
+  position: string;
+  platform?: string;
+  status?: string;
+  sentAt?: string;
+  notes?: string;
+  cvDocumentId?: string;
+  lmDocumentId?: string;
+};
+
+export type ApplicationStats = {
+  total: number;
+  byStatus: Record<string, number>;
+  interviews: number;
+  responseRate: number;
+};
+
+export function listApplications(): Promise<Application[]> {
+  return apiFetch('/api/applications');
+}
+
+export function getApplication(id: string): Promise<Application> {
+  return apiFetch(`/api/applications/${id}`);
+}
+
+export function applicationStats(): Promise<ApplicationStats> {
+  return apiFetch('/api/applications/stats');
+}
+
+export function createApplication(
+  input: ApplicationInput,
+): Promise<Application> {
+  return apiFetch('/api/applications', jsonBody('POST', input));
+}
+
+export function updateApplication(
+  id: string,
+  input: Partial<ApplicationInput>,
+): Promise<Application> {
+  return apiFetch(`/api/applications/${id}`, jsonBody('PATCH', input));
+}
+
+export function deleteApplication(id: string): Promise<{ deleted: boolean }> {
+  return apiFetch(`/api/applications/${id}`, { method: 'DELETE' });
+}
+
+export function applicationsExportUrl(): string {
+  return `${BASE_URL}/api/applications/export`;
+}

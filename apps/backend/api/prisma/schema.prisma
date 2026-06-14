@@ -26,6 +26,39 @@ model User {
   expenses      Expense[]
   budgets       Budget[]
   categories    Category[]
+  dataExports   DataExport[]
+  applications  Application[]
+}
+
+model DataExport {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  filePath  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Application {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company      String
+  position     String
+  platform     String?
+  status       String   @default("Envoyée")
+  sentAt       DateTime
+  notes        String?  @db.Text
+  cvDocumentId String?
+  lmDocumentId String?
+  lastStatusAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId, status])
 }
 
 model Category {

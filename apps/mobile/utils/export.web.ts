@@ -1,15 +1,19 @@
 import { budgetExportUrl } from '../lib/api';
 
-export async function exportMonthCsv(month: string): Promise<void> {
-  const res = await fetch(budgetExportUrl(month), { credentials: 'include' });
+export async function exportCsv(url: string, filename: string): Promise<void> {
+  const res = await fetch(url, { credentials: 'include' });
   if (!res.ok) throw new Error(`Erreur ${res.status}`);
 
-  const url = URL.createObjectURL(await res.blob());
+  const objectUrl = URL.createObjectURL(await res.blob());
   const link = document.createElement('a');
-  link.href = url;
-  link.download = `depenses-${month}.csv`;
+  link.href = objectUrl;
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(objectUrl);
+}
+
+export function exportMonthCsv(month: string): Promise<void> {
+  return exportCsv(budgetExportUrl(month), `depenses-${month}.csv`);
 }
