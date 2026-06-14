@@ -1,17 +1,11 @@
-import { useEffect } from 'react';
-import { Stack, router } from 'expo-router';
+import { Stack, Redirect } from 'expo-router';
 import { authClient } from '../../lib/auth-client';
 
 export default function AuthLayout() {
-  useEffect(() => {
-    async function checkSession() {
-      const session = await authClient.getSession();
-      if (session?.data?.user) {
-        router.replace('/(tabs)');
-      }
-    }
-    checkSession();
-  }, []);
+  const { data: session, isPending } = authClient.useSession();
+
+  if (isPending) return null;
+  if (session?.user) return <Redirect href="/(tabs)" />;
 
   return <Stack screenOptions={{ headerShown: false }} />;
 }

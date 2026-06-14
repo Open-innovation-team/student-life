@@ -1,12 +1,17 @@
 import { View } from 'react-native';
-import { Tabs, usePathname } from 'expo-router';
+import { Tabs, usePathname, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Fab } from '../../components/fab';
 import { UserProvider } from '../../lib/user-context';
+import { authClient } from '../../lib/auth-client';
 
 export default function TabsLayout() {
+  const { data: session, isPending } = authClient.useSession();
   const pathname = usePathname();
   const isFinances = pathname === '/finances';
+
+  if (isPending) return null;
+  if (!session?.user) return <Redirect href="/(auth)/login" />;
 
   return (
     <UserProvider>
