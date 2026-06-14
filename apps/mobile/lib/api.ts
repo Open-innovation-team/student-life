@@ -159,7 +159,16 @@ export function todayExpenses(): Promise<{
   return apiFetch('/api/expenses/today');
 }
 
-export function createExpense(input: ExpenseInput): Promise<Expense> {
+export type BudgetAlert = {
+  category: string;
+  level: 'warning' | 'exceeded';
+  spentCents: number;
+  budgetCents: number;
+};
+
+export type CreatedExpense = Expense & { alert: BudgetAlert | null };
+
+export function createExpense(input: ExpenseInput): Promise<CreatedExpense> {
   return apiFetch('/api/expenses', jsonBody('POST', input));
 }
 
@@ -180,4 +189,49 @@ export function listCategories(): Promise<Categories> {
 
 export function createCategory(name: string): Promise<CustomCategory> {
   return apiFetch('/api/categories', jsonBody('POST', { name }));
+}
+
+export type Budget = {
+  id: string;
+  category: string | null;
+  amountCents: number;
+};
+
+export type DashboardCategory = {
+  category: string;
+  spentCents: number;
+  budgetCents: number | null;
+  previousSpentCents: number;
+};
+
+export type WeeklyPoint = { week: number; amountCents: number };
+
+export type BudgetDashboard = {
+  month: string;
+  totalSpentCents: number;
+  totalPreviousCents: number;
+  globalBudgetCents: number | null;
+  remainingCents: number | null;
+  categories: DashboardCategory[];
+  weekly: WeeklyPoint[];
+};
+
+export function getBudgetDashboard(month: string): Promise<BudgetDashboard> {
+  return apiFetch(`/api/budgets/dashboard?month=${month}`);
+}
+
+export function listBudgets(month: string): Promise<Budget[]> {
+  return apiFetch(`/api/budgets?month=${month}`);
+}
+
+export function upsertBudget(input: {
+  month: string;
+  category?: string | null;
+  amountCents: number;
+}): Promise<unknown> {
+  return apiFetch('/api/budgets', jsonBody('PUT', input));
+}
+
+export function budgetExportUrl(month: string): string {
+  return `${BASE_URL}/api/budgets/export?month=${month}`;
 }

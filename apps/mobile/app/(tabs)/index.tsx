@@ -11,12 +11,14 @@ import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { authClient } from '../../lib/auth-client';
 import {
+  BudgetDashboard,
   DocumentItem,
   Expense,
+  getBudgetDashboard,
   listDocuments,
   todayExpenses,
 } from '../../lib/api';
-import { categoryIcon, formatCents } from '../../utils';
+import { categoryIcon, currentMonth, formatCents } from '../../utils';
 
 export default function HomeScreen() {
   const [firstName, setFirstName] = useState<string | null>(null);
@@ -25,6 +27,7 @@ export default function HomeScreen() {
     expenses: Expense[];
     totalCents: number;
   }>({ expenses: [], totalCents: 0 });
+  const [budget, setBudget] = useState<BudgetDashboard | null>(null);
 
   useEffect(() => {
     async function loadSession() {
@@ -47,6 +50,11 @@ export default function HomeScreen() {
           setToday(await todayExpenses());
         } catch {
           setToday({ expenses: [], totalCents: 0 });
+        }
+        try {
+          setBudget(await getBudgetDashboard(currentMonth()));
+        } catch {
+          setBudget(null);
         }
       };
       loadWidgets();
@@ -156,6 +164,48 @@ export default function HomeScreen() {
             ))
           )}
         </View>
+
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => router.push('/budget')}
+          className="bg-white rounded-2xl p-4 mb-4 shadow-sm"
+        >
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-[#08415C] font-bold text-lg">Mon budget</Text>
+            <Ionicons name="chevron-forward" color="#9ca3af" size={18} />
+          </View>
+          {budget && budget.globalBudgetCents !== null ? (
+            <>
+              <View className="flex-row justify-between items-end">
+                <Text
+                  className="text-[#08415C] text-2xl font-bold"
+                  style={{ fontVariant: ['tabular-nums'] }}
+                >
+                  {formatCents(budget.totalSpentCents)}
+                </Text>
+                <Text className="text-gray-400 text-sm">
+                  / {formatCents(budget.globalBudgetCents)}
+                </Text>
+              </View>
+              <View className="mt-3 bg-gray-100 rounded-full h-2">
+                <View
+                  className="rounded-full h-2"
+                  style={{
+                    width: `${Math.min(100, Math.round((budget.totalSpentCents / budget.globalBudgetCents) * 100))}%`,
+                    backgroundColor:
+                      budget.totalSpentCents > budget.globalBudgetCents
+                        ? '#ef4444'
+                        : '#08415C',
+                  }}
+                />
+              </View>
+            </>
+          ) : (
+            <Text className="text-gray-400 text-sm">
+              Définis ton budget mensuel pour suivre tes dépenses.
+            </Text>
+          )}
+        </TouchableOpacity>
 
         {/* Widget dépenses du jour */}
         <TouchableOpacity

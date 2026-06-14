@@ -94,16 +94,27 @@ export default function FinancesScreen() {
   return (
     <View className="flex-1 bg-[#E5FCFF]">
       <View className="bg-[#08415C] pt-16 pb-7 px-6 rounded-b-3xl">
-        <Text className="text-white/70 text-sm">Total des dépenses</Text>
-        <Text
-          className="text-white text-4xl font-bold mt-1"
-          style={{ fontVariant: ['tabular-nums'] }}
-        >
-          {formatCents(total)}
-        </Text>
-        <Text className="text-white/50 text-xs mt-1">
-          {expenses.length} transaction{expenses.length > 1 ? 's' : ''}
-        </Text>
+        <View className="flex-row items-start justify-between">
+          <View>
+            <Text className="text-white/70 text-sm">Total des dépenses</Text>
+            <Text
+              className="text-white text-4xl font-bold mt-1"
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
+              {formatCents(total)}
+            </Text>
+            <Text className="text-white/50 text-xs mt-1">
+              {expenses.length} transaction{expenses.length > 1 ? 's' : ''}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push('/budget')}
+            className="flex-row items-center gap-1.5 bg-white/15 rounded-full px-3 py-2"
+          >
+            <Ionicons name="pie-chart" size={16} color="#fff" />
+            <Text className="text-white text-sm font-medium">Budget</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View className="flex-1 px-4 pt-4">
