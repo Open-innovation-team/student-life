@@ -26,6 +26,26 @@ model User {
   expenses      Expense[]
   budgets       Budget[]
   categories    Category[]
+  applications  Application[]
+}
+
+model Application {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company      String
+  position     String
+  platform     String?
+  status       String   @default("Envoyée")
+  sentAt       DateTime
+  notes        String?  @db.Text
+  cvDocumentId String?
+  lmDocumentId String?
+  lastStatusAt DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId, status])
 }
 
 model Category {
