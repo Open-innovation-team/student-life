@@ -10,10 +10,12 @@ import {
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
+  Application,
   BudgetDashboard,
   DocumentItem,
   Expense,
   getBudgetDashboard,
+  listApplications,
   listDocuments,
   todayExpenses,
 } from '../../lib/api';
@@ -27,6 +29,7 @@ export default function HomeScreen() {
     totalCents: number;
   }>({ expenses: [], totalCents: 0 });
   const [budget, setBudget] = useState<BudgetDashboard | null>(null);
+  const [applications, setApplications] = useState<Application[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -47,6 +50,11 @@ export default function HomeScreen() {
         } catch {
           setBudget(null);
         }
+        try {
+          setApplications(await listApplications());
+        } catch {
+          setApplications([]);
+        }
       };
       loadWidgets();
     }, []),
@@ -60,6 +68,8 @@ export default function HomeScreen() {
       Alert.alert('Bientôt disponible', message);
     }
   };
+
+  const toFollowUp = applications.filter((a) => a.needsFollowUp).length;
 
   return (
     <View className="flex-1 bg-[#E5FCFF]">
@@ -198,7 +208,7 @@ export default function HomeScreen() {
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={() => router.push('/(tabs)/finances')}
-          className="bg-white rounded-2xl p-4 mb-8 shadow-sm"
+          className="bg-white rounded-2xl p-4 mb-4 shadow-sm"
         >
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-[#08415C] font-bold text-lg">
@@ -244,6 +254,30 @@ export default function HomeScreen() {
                 </Text>
               </View>
             ))
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => router.push('/applications')}
+          className="bg-white rounded-2xl p-4 mb-8 shadow-sm"
+        >
+          <View className="flex-row items-center justify-between mb-1">
+            <Text className="text-[#08415C] font-bold text-lg">
+              Mes candidatures
+            </Text>
+            <Ionicons name="chevron-forward" color="#9ca3af" size={18} />
+          </View>
+          {applications.length === 0 ? (
+            <Text className="text-gray-400 text-sm">
+              Suis tes candidatures et tes relances en un coup d&apos;œil.
+            </Text>
+          ) : (
+            <Text className="text-gray-500 text-sm">
+              {applications.length} candidature
+              {applications.length > 1 ? 's' : ''}
+              {toFollowUp > 0 ? ` · ${toFollowUp} à relancer` : ''}
+            </Text>
           )}
         </TouchableOpacity>
       </ScrollView>

@@ -19,22 +19,24 @@ async function ensurePermission(): Promise<boolean> {
   return asked.granted;
 }
 
+export async function notifyLocal(title: string, body: string): Promise<void> {
+  if (Platform.OS === 'web') return;
+  if (!(await ensurePermission())) return;
+  await Notifications.scheduleNotificationAsync({
+    content: { title, body },
+    trigger: null,
+  });
+}
+
 export async function notifyBudgetAlert(
   alert: BudgetAlert | null,
 ): Promise<void> {
-  if (!alert || Platform.OS === 'web') return;
-  if (!(await ensurePermission())) return;
-
+  if (!alert) return;
   const exceeded = alert.level === 'exceeded';
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: exceeded
-        ? `Budget ${alert.category} dépassé 🚨`
-        : `Budget ${alert.category} à 80% ⚠️`,
-      body: `${formatCents(alert.spentCents)} dépensés sur ${formatCents(
-        alert.budgetCents,
-      )}.`,
-    },
-    trigger: null,
-  });
+  await notifyLocal(
+    exceeded
+      ? `Budget ${alert.category} dépassé 🚨`
+      : `Budget ${alert.category} à 80% ⚠️`,
+    `${formatCents(alert.spentCents)} dépensés sur ${formatCents(alert.budgetCents)}.`,
+  );
 }
