@@ -10,11 +10,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { authClient } from '../../lib/auth-client';
-import { DocumentItem, listDocuments } from '../../lib/api';
+import {
+  DocumentItem,
+  Expense,
+  listDocuments,
+  todayExpenses,
+} from '../../lib/api';
+import { categoryIcon, formatCents } from '../../utils';
 
 export default function HomeScreen() {
   const [firstName, setFirstName] = useState<string | null>(null);
   const [recent, setRecent] = useState<DocumentItem[]>([]);
+  const [today, setToday] = useState<{
+    expenses: Expense[];
+    totalCents: number;
+  }>({ expenses: [], totalCents: 0 });
 
   useEffect(() => {
     async function loadSession() {
@@ -26,9 +36,20 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      listDocuments()
-        .then((docs) => setRecent(docs.slice(0, 3)))
-        .catch(() => setRecent([]));
+      const loadWidgets = async () => {
+        try {
+          const docs = await listDocuments();
+          setRecent(docs.slice(0, 3));
+        } catch {
+          setRecent([]);
+        }
+        try {
+          setToday(await todayExpenses());
+        } catch {
+          setToday({ expenses: [], totalCents: 0 });
+        }
+      };
+      loadWidgets();
     }, []),
   );
 
@@ -136,25 +157,58 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Widget budget */}
-        <View className="bg-white rounded-2xl p-4 mb-8 shadow-sm">
-          <Text className="text-[#08415C] font-bold text-lg mb-3">
-            Budget du mois
-          </Text>
-          <View className="flex-row justify-between items-center">
-            <View>
-              <Text className="text-gray-400 text-xs">Dépensé</Text>
-              <Text className="text-[#08415C] text-2xl font-bold">420€</Text>
-            </View>
-            <View className="items-end">
-              <Text className="text-gray-400 text-xs">Budget total</Text>
-              <Text className="text-gray-600 text-lg font-medium">800€</Text>
-            </View>
+        {/* Widget dépenses du jour */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => router.push('/(tabs)/finances')}
+          className="bg-white rounded-2xl p-4 mb-8 shadow-sm"
+        >
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-[#08415C] font-bold text-lg">
+              Dépenses du jour
+            </Text>
+            <Text
+              className="text-[#08415C] text-2xl font-bold"
+              style={{ fontVariant: ['tabular-nums'] }}
+            >
+              {formatCents(today.totalCents)}
+            </Text>
           </View>
-          <View className="mt-3 bg-gray-100 rounded-full h-2">
-            <View className="bg-[#08415C] rounded-full h-2 w-1/2" />
-          </View>
-        </View>
+
+          {today.expenses.length === 0 ? (
+            <Text className="text-gray-400 text-sm">
+              Aucune dépense aujourd&apos;hui. Touche le bouton + pour en
+              ajouter une.
+            </Text>
+          ) : (
+            today.expenses.slice(0, 3).map((e) => (
+              <View
+                key={e.id}
+                className="flex-row items-center py-2 border-b border-gray-100"
+              >
+                <View className="w-9 h-9 bg-[#E5FCFF] rounded-lg items-center justify-center mr-3">
+                  <Ionicons
+                    name={categoryIcon(e.category)}
+                    color="#08415C"
+                    size={18}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text
+                    className="text-gray-800 font-medium text-sm"
+                    numberOfLines={1}
+                  >
+                    {e.label || e.category}
+                  </Text>
+                  <Text className="text-gray-400 text-xs">{e.category}</Text>
+                </View>
+                <Text className="text-[#08415C] font-semibold text-sm">
+                  {formatCents(e.amountCents)}
+                </Text>
+              </View>
+            ))
+          )}
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );

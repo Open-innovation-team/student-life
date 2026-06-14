@@ -111,3 +111,73 @@ export function generateQuiz(id: string, nbQuestions: number): Promise<Quiz> {
     body: JSON.stringify({ nbQuestions }),
   });
 }
+
+export type Expense = {
+  id: string;
+  amountCents: number;
+  category: string;
+  label: string | null;
+  date: string;
+};
+
+export type ExpenseInput = {
+  amountCents: number;
+  category: string;
+  label?: string;
+  date?: string;
+};
+
+export type ExpenseSort = 'date' | 'amount' | 'category';
+export type SortOrder = 'asc' | 'desc';
+
+export type CustomCategory = { id: string; name: string };
+
+export type Categories = {
+  predefined: string[];
+  custom: CustomCategory[];
+};
+
+function jsonBody(method: string, body: unknown): RequestInit {
+  return {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  };
+}
+
+export function listExpenses(
+  sort: ExpenseSort = 'date',
+  order: SortOrder = 'desc',
+): Promise<Expense[]> {
+  return apiFetch(`/api/expenses?sort=${sort}&order=${order}`);
+}
+
+export function todayExpenses(): Promise<{
+  expenses: Expense[];
+  totalCents: number;
+}> {
+  return apiFetch('/api/expenses/today');
+}
+
+export function createExpense(input: ExpenseInput): Promise<Expense> {
+  return apiFetch('/api/expenses', jsonBody('POST', input));
+}
+
+export function updateExpense(
+  id: string,
+  input: Partial<ExpenseInput>,
+): Promise<Expense> {
+  return apiFetch(`/api/expenses/${id}`, jsonBody('PATCH', input));
+}
+
+export function deleteExpense(id: string): Promise<{ deleted: boolean }> {
+  return apiFetch(`/api/expenses/${id}`, { method: 'DELETE' });
+}
+
+export function listCategories(): Promise<Categories> {
+  return apiFetch('/api/categories');
+}
+
+export function createCategory(name: string): Promise<CustomCategory> {
+  return apiFetch('/api/categories', jsonBody('POST', { name }));
+}
