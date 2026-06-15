@@ -7,7 +7,6 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
-  Linking,
   Platform,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
@@ -16,10 +15,10 @@ import * as DocumentPicker from 'expo-document-picker';
 import {
   DocumentItem,
   deleteDocument,
-  documentFileUrl,
   listDocuments,
   uploadDocument,
 } from '../../lib/api';
+import { openDocument } from '../../utils/document-view';
 
 function formatSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
@@ -102,14 +101,11 @@ export default function DocumentsScreen() {
     }
   };
 
-  const handleView = (doc: DocumentItem) => {
-    const url = documentFileUrl(doc.id);
-    if (Platform.OS === 'web') {
-      window.open(url, '_blank');
-    } else {
-      Linking.openURL(url).catch(() =>
-        showError('Ouverture impossible', 'Impossible d’ouvrir le PDF.'),
-      );
+  const handleView = async (doc: DocumentItem) => {
+    try {
+      await openDocument(doc.id, doc.filename);
+    } catch {
+      showError('Ouverture impossible', 'Impossible d’ouvrir le PDF.');
     }
   };
 

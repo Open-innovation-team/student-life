@@ -68,6 +68,11 @@ export default function RootLayout() {
         name="applications/[id]"
         options={{ presentation: 'modal' }}
       />
+      <Stack.Screen name="interview/[id]" />
+      <Stack.Screen
+        name="interview/training"
+        options={{ presentation: 'modal' }}
+      />
     </Stack>
   );
 }
