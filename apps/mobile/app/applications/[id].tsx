@@ -131,6 +131,16 @@ export default function ApplicationDetailScreen() {
             />
 
             <TouchableOpacity
+              onPress={() => router.push(`/interview/${id}`)}
+              className="flex-row items-center justify-center gap-2 bg-[#08415C] rounded-2xl py-4 mt-5"
+            >
+              <Ionicons name="school-outline" size={18} color="#fff" />
+              <Text className="text-white font-semibold">
+                Préparer l&apos;entretien
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               onPress={handleDelete}
               className="flex-row items-center justify-center gap-2 py-4 mt-4"
             >

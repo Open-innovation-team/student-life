@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = env("DATABASE_URL")
 }
 
 model User {
@@ -45,7 +45,23 @@ model Application {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  interviewQuestions InterviewQuestion[]
+
   @@index([userId, status])
+}
+
+model InterviewQuestion {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  category      String
+  question      String      @db.Text
+  answer        String?     @db.Text
+  source        String      @default("catalog")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([applicationId])
 }
 
 model Category {
