@@ -1,0 +1,3 @@
+# .gitleaksignore
+# Faux positif : placeholder du README NestJS par défaut (token d'exemple "abc123def456")
+f519209ac7fbbee0faf5935c2dbebee5367f07c3:apps/backend/api/README.md:generic-api-key:5

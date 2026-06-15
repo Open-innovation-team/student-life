@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import { formatMonthOf, monthRange, previousMonth } from './month.util';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 type ExpenseRow = { category: string; amountCents: number; date: Date };
 
@@ -41,8 +39,10 @@ function weeklyBreakdown(expenses: ExpenseRow[], start: Date, end: Date) {
 
 @Injectable()
 export class BudgetsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   list(userId: string, month: string) {
-    return prisma.budget.findMany({
+    return this.prisma.budget.findMany({
       where: { userId, month },
       select: { id: true, category: true, amountCents: true },
     });
@@ -55,20 +55,22 @@ export class BudgetsService {
     amountCents: number,
   ) {
     if (amountCents <= 0) {
-      await prisma.budget.deleteMany({ where: { userId, month, category } });
+      await this.prisma.budget.deleteMany({
+        where: { userId, month, category },
+      });
       return { deleted: true };
     }
-    const existing = await prisma.budget.findFirst({
+    const existing = await this.prisma.budget.findFirst({
       where: { userId, month, category },
     });
     if (existing) {
-      return prisma.budget.update({
+      return this.prisma.budget.update({
         where: { id: existing.id },
         data: { amountCents },
         select: { id: true, category: true, amountCents: true },
       });
     }
-    return prisma.budget.create({
+    return this.prisma.budget.create({
       data: { userId, month, category, amountCents },
       select: { id: true, category: true, amountCents: true },
     });
@@ -79,15 +81,15 @@ export class BudgetsService {
     const [prevStart, prevEnd] = monthRange(previousMonth(month));
 
     const [expenses, prevExpenses, budgets] = await Promise.all([
-      prisma.expense.findMany({
+      this.prisma.expense.findMany({
         where: { userId, date: { gte: start, lt: end } },
         select: { category: true, amountCents: true, date: true },
       }),
-      prisma.expense.findMany({
+      this.prisma.expense.findMany({
         where: { userId, date: { gte: prevStart, lt: prevEnd } },
         select: { category: true, amountCents: true },
       }),
-      prisma.budget.findMany({
+      this.prisma.budget.findMany({
         where: { userId, month },
         select: { category: true, amountCents: true },
       }),
@@ -130,7 +132,7 @@ export class BudgetsService {
 
   async exportCsv(userId: string, month: string) {
     const [start, end] = monthRange(month);
-    const expenses = await prisma.expense.findMany({
+    const expenses = await this.prisma.expense.findMany({
       where: { userId, date: { gte: start, lt: end } },
       orderBy: { date: 'asc' },
       select: { date: true, category: true, label: true, amountCents: true },
@@ -155,13 +157,13 @@ export class BudgetsService {
     addedCents: number,
   ): Promise<BudgetAlert | null> {
     const month = formatMonthOf(new Date(date));
-    const budget = await prisma.budget.findFirst({
+    const budget = await this.prisma.budget.findFirst({
       where: { userId, month, category },
     });
     if (!budget || budget.amountCents <= 0) return null;
 
     const [start, end] = monthRange(month);
-    const { _sum } = await prisma.expense.aggregate({
+    const { _sum } = await this.prisma.expense.aggregate({
       where: { userId, category, date: { gte: start, lt: end } },
       _sum: { amountCents: true },
     });

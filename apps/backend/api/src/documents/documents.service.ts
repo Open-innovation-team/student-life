@@ -3,12 +3,10 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import { unlink } from 'fs/promises';
 import { AiService, QuizQuestion } from '../ai/ai.service';
 import { PdfService } from './pdf.service';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 const DOCUMENT_SELECT = {
   id: true,
@@ -22,6 +20,7 @@ export class DocumentsService {
   constructor(
     private readonly pdfService: PdfService,
     private readonly aiService: AiService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async create(userId: string, file: Express.Multer.File) {
@@ -32,7 +31,7 @@ export class DocumentsService {
         throw err;
       });
 
-    return prisma.document.create({
+    return this.prisma.document.create({
       data: {
         userId,
         filename: file.originalname,
@@ -45,7 +44,7 @@ export class DocumentsService {
   }
 
   async listByUser(userId: string) {
-    return prisma.document.findMany({
+    return this.prisma.document.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       select: DOCUMENT_SELECT,
@@ -53,7 +52,7 @@ export class DocumentsService {
   }
 
   async findOwned(id: string, userId: string) {
-    const document = await prisma.document.findFirst({
+    const document = await this.prisma.document.findFirst({
       where: { id, userId },
     });
     if (!document) throw new NotFoundException('Document introuvable');
@@ -67,7 +66,7 @@ export class DocumentsService {
 
   async getOne(id: string, userId: string) {
     await this.findOwned(id, userId);
-    return prisma.document.findUnique({
+    return this.prisma.document.findUnique({
       where: { id },
       select: {
         ...DOCUMENT_SELECT,
@@ -83,7 +82,7 @@ export class DocumentsService {
   async delete(id: string, userId: string) {
     const document = await this.findOwned(id, userId);
     // cascade Prisma : supprime aussi Summary et Quiz associés
-    await prisma.document.delete({ where: { id } });
+    await this.prisma.document.delete({ where: { id } });
     await unlink(document.path).catch(() => undefined);
     return { deleted: true };
   }
@@ -92,7 +91,7 @@ export class DocumentsService {
     const document = await this.findOwned(id, userId);
 
     if (!refresh) {
-      const existing = await prisma.summary.findFirst({
+      const existing = await this.prisma.summary.findFirst({
         where: { documentId: id },
         orderBy: { createdAt: 'desc' },
       });
@@ -101,7 +100,7 @@ export class DocumentsService {
 
     const text = this.requireText(document.extractedText);
     const content = await this.aiService.summarize(text);
-    return prisma.summary.create({
+    return this.prisma.summary.create({
       data: { documentId: id, content },
     });
   }
@@ -113,7 +112,7 @@ export class DocumentsService {
       text,
       nbQuestions,
     );
-    return prisma.quiz.create({
+    return this.prisma.quiz.create({
       data: { documentId: id, questions },
     });
   }
