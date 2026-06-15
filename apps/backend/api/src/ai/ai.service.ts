@@ -1,4 +1,6 @@
 import {
+  HttpException,
+  HttpStatus,
   Injectable,
   ServiceUnavailableException,
   UnprocessableEntityException,
@@ -66,8 +68,7 @@ export class AiService {
     } catch {
       throw new ServiceUnavailableException('Service IA indisponible');
     }
-    if (!res.ok)
-      throw new ServiceUnavailableException('Service IA indisponible');
+    if (!res.ok) await this.throwForResponse(res, 'Ollama');
     const data = (await res.json()) as { response: string };
     return data.response;
   }
@@ -94,12 +95,31 @@ export class AiService {
     } catch {
       throw new ServiceUnavailableException('Service IA indisponible');
     }
-    if (!res.ok)
-      throw new ServiceUnavailableException('Service IA indisponible');
+    if (!res.ok) await this.throwForResponse(res, 'OpenAI-compatible');
     const data = (await res.json()) as {
       choices: { message: { content: string } }[];
     };
     return data.choices[0].message.content;
+  }
+
+  // Le fournisseur IA a répondu avec un statut non-2xx. On distingue le 429
+  // (limite de débit côté fournisseur, ex. TPM Groq) pour ne pas le masquer
+  // derrière un 503 générique, et on logge le corps pour le diagnostic.
+  private async throwForResponse(
+    res: Response,
+    provider: string,
+  ): Promise<never> {
+    const body = await res.text().catch(() => '');
+    console.error(
+      `[AiService] ${provider} ${res.status}: ${body.slice(0, 300)}`,
+    );
+    if (res.status === 429) {
+      throw new HttpException(
+        'Limite du fournisseur IA atteinte, réessayez dans une minute',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    throw new ServiceUnavailableException('Service IA indisponible');
   }
 
   async summarize(text: string): Promise<string> {
