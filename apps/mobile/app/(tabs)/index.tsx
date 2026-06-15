@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -6,10 +7,8 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { useCallback, useEffect, useState } from 'react';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { authClient } from '../../lib/auth-client';
 import {
   Application,
   BudgetDashboard,
@@ -21,9 +20,9 @@ import {
   todayExpenses,
 } from '../../lib/api';
 import { categoryIcon, currentMonth, formatCents } from '../../utils';
+import { AppHeader } from '../../components/AppHeader';
 
 export default function HomeScreen() {
-  const [firstName, setFirstName] = useState<string | null>(null);
   const [recent, setRecent] = useState<DocumentItem[]>([]);
   const [today, setToday] = useState<{
     expenses: Expense[];
@@ -31,14 +30,6 @@ export default function HomeScreen() {
   }>({ expenses: [], totalCents: 0 });
   const [budget, setBudget] = useState<BudgetDashboard | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
-
-  useEffect(() => {
-    async function loadSession() {
-      const session = await authClient.getSession();
-      setFirstName(session?.data?.user?.name?.split(' ')[0] ?? null);
-    }
-    loadSession();
-  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -82,11 +73,7 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-[#E5FCFF]">
-      {/* Header */}
-      <View className="bg-[#08415C] pt-16 pb-6 px-6">
-        <Text className="text-white/70 text-sm">Bonjour {firstName} 👋</Text>
-        <Text className="text-white text-2xl font-bold mt-1">Étudiant</Text>
-      </View>
+      <AppHeader title="Étudiant" greeting />
 
       <ScrollView
         className="flex-1 px-4 pt-4"

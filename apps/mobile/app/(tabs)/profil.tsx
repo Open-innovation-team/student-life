@@ -10,28 +10,41 @@ import {
   Linking,
   ScrollView,
 } from 'react-native';
-import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Platform } from 'react-native';
 import { authClient, BASE_URL, ORIGIN } from '../../lib/auth-client';
+import { useUser } from '../../lib/user-context';
 import { userUpdateSchema } from '../../lib/schemas/user';
 import { requestDataExport } from '../../lib/api';
 import { useEffect, useState } from 'react';
 
 export default function ProfilScreen() {
+  const { editing } = useLocalSearchParams<{ editing?: string }>();
+  const {
+    firstName: ctxFirstName,
+    lastName: ctxLastName,
+    email: ctxEmail,
+    image: ctxImage,
+    establishment: ctxEstablishment,
+    sector: ctxSector,
+    studyLevel: ctxStudyLevel,
+    refresh,
+  } = useUser();
+
   const [firstName, setFirstName] = useState<string | null>(null);
   const [lastName, setLastName] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
-  const [profilPicture, setProfilPicture] = useState<string | null>(null);
   const [establishment, setEstablishment] = useState<string | null>(null);
   const [sector, setSector] = useState<string | null>(null);
   const [studyLevel, setStudyLevel] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [originalData, setOriginalData] = useState({
-    firstName: null,
-    lastName: null,
-    establishment: null,
-    sector: null,
-    studyLevel: null,
+    firstName: null as string | null,
+    lastName: null as string | null,
+    establishment: null as string | null,
+    sector: null as string | null,
+    studyLevel: null as string | null,
   });
 
   // RGPD : export + suppression de compte
@@ -42,29 +55,31 @@ export default function ProfilScreen() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    async function loadSession() {
-      const response = await fetch(`${BASE_URL}/api/users/me`, {
-        headers: { 'Content-Type': 'application/json', Origin: ORIGIN },
-        credentials: 'include',
-      });
-      const userData = await response.json();
-      setFirstName(userData.firstName ?? null);
-      setLastName(userData.lastName ?? null);
-      setEmail(userData.email ?? null);
-      setProfilPicture(userData.image ?? null);
-      setEstablishment(userData.establishment ?? null);
-      setSector(userData.sector ?? null);
-      setStudyLevel(userData.studyLevel ?? null);
-      setOriginalData({
-        firstName: userData.firstName ?? null,
-        lastName: userData.lastName ?? null,
-        establishment: userData.establishment ?? null,
-        sector: userData.sector ?? null,
-        studyLevel: userData.studyLevel ?? null,
-      });
-    }
-    loadSession();
-  }, []);
+    setFirstName(ctxFirstName);
+    setLastName(ctxLastName);
+    setEmail(ctxEmail);
+    setEstablishment(ctxEstablishment);
+    setSector(ctxSector);
+    setStudyLevel(ctxStudyLevel);
+    setOriginalData({
+      firstName: ctxFirstName,
+      lastName: ctxLastName,
+      establishment: ctxEstablishment,
+      sector: ctxSector,
+      studyLevel: ctxStudyLevel,
+    });
+  }, [
+    ctxFirstName,
+    ctxLastName,
+    ctxEmail,
+    ctxEstablishment,
+    ctxSector,
+    ctxStudyLevel,
+  ]);
+
+  useEffect(() => {
+    if (editing === 'true') setIsEditing(true);
+  }, [editing]);
 
   const handleSave = async () => {
     const validation = userUpdateSchema.safeParse({
@@ -89,29 +104,16 @@ export default function ProfilScreen() {
       });
 
       if (!response.ok) {
-        // Erreur HTTP (400, 401, 500, etc.)
         const error = await response.json();
         Alert.alert('Erreur', error.message || 'Impossible de mettre à jour');
         return;
       }
 
-      // Succès
-      const updatedUser = await response.json();
       setIsEditing(false);
-      setOriginalData({
-        firstName: updatedUser.firstName ?? firstName,
-        lastName: updatedUser.lastName ?? lastName,
-        sector: updatedUser.sector ?? sector,
-        studyLevel: updatedUser.studyLevel ?? studyLevel,
-        establishment: updatedUser.establishment ?? establishment,
-      });
-
+      await refresh();
       Alert.alert('Succès', 'Profil mis à jour');
-      console.log('Profil mis à jour:', updatedUser);
-    } catch (error) {
-      // Erreur réseau
+    } catch {
       Alert.alert('Erreur', 'Problème de connexion');
-      console.error(error);
     }
   };
 
@@ -126,14 +128,11 @@ export default function ProfilScreen() {
     } else {
       Alert.alert('Déconnexion', 'Voulez-vous vraiment vous déconnecter ?', [
         { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Se déconnecter',
-          style: 'destructive',
-          onPress: doLogout,
-        },
+        { text: 'Se déconnecter', style: 'destructive', onPress: doLogout },
       ]);
     }
   };
+
   const startEditing = () => setIsEditing(true);
 
   // --- RGPD : export des données ---
@@ -208,10 +207,10 @@ export default function ProfilScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <Text className="text-[#08415C] text-xl font-bold m-2">Mon Profil</Text>
-      {/* Image de profile */}
-      {profilPicture ? (
+      {/* Image de profil */}
+      {ctxImage ? (
         <Image
-          source={{ uri: profilPicture }}
+          source={{ uri: ctxImage }}
           className="w-24 h-24 rounded-full m-4"
         />
       ) : (
@@ -224,9 +223,17 @@ export default function ProfilScreen() {
       )}
       <View className="flex-4 bg-[#E5FCFF] items-center px-6 w-full">
         <View className="bg-white rounded-2xl p-5 shadow-sm gap-4 w-full max-w-md">
-          <Text className="text-[#08415C] font-bold text-lg">
-            Informations personnelles
-          </Text>
+          {/* En-tête avec bouton Modifier */}
+          <View className="flex-row justify-between items-center">
+            <Text className="text-[#08415C] font-bold text-lg">
+              Informations personnelles
+            </Text>
+            {!isEditing && (
+              <TouchableOpacity onPress={startEditing}>
+                <Ionicons name="pencil-outline" size={20} color="#08415C" />
+              </TouchableOpacity>
+            )}
+          </View>
 
           {/* Prénom + Nom */}
           <View className="flex-row gap-3">
@@ -247,11 +254,11 @@ export default function ProfilScreen() {
                   onChangeText={setFirstName}
                 />
               ) : (
-                <TouchableOpacity onPress={startEditing} activeOpacity={0.7}>
+                <View>
                   <Text className="text-gray-800 text-sm py-3 px-4 bg-[#E5FCFF]/50 rounded-xl">
                     {firstName ?? 'Non renseigné'}
                   </Text>
-                </TouchableOpacity>
+                </View>
               )}
             </View>
             <View className="flex-1 gap-1 w-full max-w-md">
@@ -271,23 +278,39 @@ export default function ProfilScreen() {
                   onChangeText={setLastName}
                 />
               ) : (
-                <TouchableOpacity onPress={startEditing} activeOpacity={0.7}>
+                <View>
                   <Text className="text-gray-800 text-sm py-3 px-4 bg-[#E5FCFF]/50 rounded-xl">
                     {lastName ?? 'Non renseigné'}
                   </Text>
-                </TouchableOpacity>
+                </View>
               )}
             </View>
           </View>
+
           {/* Email */}
           <View className="gap-1">
             <Text className="text-gray-500 text-xs font-medium ml-1">
               Email
             </Text>
-            <Text className="text-black-500 text-md font-medium ml-1">
-              {email ?? ''}
-            </Text>
+            {isEditing ? (
+              <TextInput
+                className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800 w-full"
+                style={{
+                  paddingVertical: Platform.OS === 'web' ? 8 : 12,
+                  fontSize: Platform.OS === 'web' ? 10 : 12,
+                }}
+                value={email ?? ''}
+                editable={false}
+              />
+            ) : (
+              <View>
+                <Text className="text-gray-800 text-sm py-3 px-4 bg-[#E5FCFF]/50 rounded-xl">
+                  {email ?? 'Email non renseigné'}
+                </Text>
+              </View>
+            )}
           </View>
+
           {/* Filière */}
           <View className="gap-1">
             <Text className="text-gray-500 text-xs font-medium ml-1">
@@ -306,14 +329,15 @@ export default function ProfilScreen() {
                 onChangeText={setSector}
               />
             ) : (
-              <TouchableOpacity onPress={startEditing} activeOpacity={0.7}>
+              <View>
                 <Text className="text-gray-800 text-sm py-3 px-4 bg-[#E5FCFF]/50 rounded-xl">
                   {sector ?? 'Filière non renseignée'}
                 </Text>
-              </TouchableOpacity>
+              </View>
             )}
           </View>
-          {/* Niveau d&apos;étude */}
+
+          {/* Niveau d'étude */}
           <View className="gap-1">
             <Text className="text-gray-500 text-xs font-medium ml-1">
               Niveau d&apos;étude
@@ -331,11 +355,11 @@ export default function ProfilScreen() {
                 onChangeText={setStudyLevel}
               />
             ) : (
-              <TouchableOpacity onPress={startEditing} activeOpacity={0.7}>
+              <View>
                 <Text className="text-gray-800 text-sm py-3 px-4 bg-[#E5FCFF]/50 rounded-xl">
                   {studyLevel ?? "Niveau d'étude non renseigné"}
                 </Text>
-              </TouchableOpacity>
+              </View>
             )}
           </View>
 
@@ -357,15 +381,15 @@ export default function ProfilScreen() {
                 onChangeText={setEstablishment}
               />
             ) : (
-              <TouchableOpacity onPress={startEditing} activeOpacity={0.7}>
+              <View>
                 <Text className="text-gray-800 text-sm py-3 px-4 bg-[#E5FCFF]/50 rounded-xl">
                   {establishment ?? 'Établissement non renseigné'}
                 </Text>
-              </TouchableOpacity>
+              </View>
             )}
           </View>
 
-          {/* Bouton */}
+          {/* Boutons Sauvegarder / Annuler */}
           {isEditing && (
             <TouchableOpacity
               className="bg-[#08415C] rounded-xl items-center py-4 mt-2"
@@ -378,7 +402,6 @@ export default function ProfilScreen() {
             <TouchableOpacity
               className="bg-gray-300 rounded-xl items-center py-4 mt-2"
               onPress={() => {
-                // Restaurer les valeurs originales
                 setFirstName(originalData.firstName);
                 setLastName(originalData.lastName);
                 setSector(originalData.sector);

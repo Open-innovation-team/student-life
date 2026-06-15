@@ -12,6 +12,7 @@ import {
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
+import { AppHeader } from '../../components/AppHeader';
 import {
   DocumentItem,
   deleteDocument,
@@ -110,106 +111,106 @@ export default function DocumentsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#E5FCFF] px-4 pt-12">
-      <Text className="text-[#08415C] text-xl font-bold mb-4 text-center">
-        Mes Documents
-      </Text>
+    <View className="flex-1 bg-[#E5FCFF]">
+      <AppHeader title="Mes documents" />
 
-      <View className="bg-white rounded-xl px-3 mb-4 flex-row items-center gap-2">
-        <Ionicons name="search" color="#08415C" size={18} />
-        <TextInput
-          className="flex-1 py-3 text-[#08415C]"
-          placeholder="Rechercher un document…"
-          placeholderTextColor="#9ca3af"
-          value={query}
-          onChangeText={setQuery}
-          autoCorrect={false}
-          autoCapitalize="none"
-        />
-        {query.length > 0 && (
-          <TouchableOpacity onPress={() => setQuery('')} hitSlop={8}>
-            <Ionicons name="close-circle" color="#9ca3af" size={18} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <TouchableOpacity
-        className="bg-[#08415C] rounded-xl items-center py-4 mb-4 flex-row justify-center gap-2"
-        onPress={handleUpload}
-        disabled={uploading}
-      >
-        {uploading ? (
-          <>
-            <ActivityIndicator color="#fff" />
-            <Text className="text-white font-semibold">Envoi en cours…</Text>
-          </>
-        ) : (
-          <>
-            <Ionicons name="cloud-upload" color="#fff" size={18} />
-            <Text className="text-white font-semibold">Uploader un PDF</Text>
-          </>
-        )}
-      </TouchableOpacity>
-
-      {loading ? (
-        <ActivityIndicator color="#08415C" className="mt-8" />
-      ) : documents.length === 0 ? (
-        <View className="items-center mt-12">
-          <Ionicons name="document-text-outline" color="#9ca3af" size={48} />
-          <Text className="text-gray-400 mt-2 text-center">
-            Aucun document.{'\n'}Uploade un PDF de cours pour commencer !
-          </Text>
-        </View>
-      ) : filtered.length === 0 ? (
-        <View className="items-center mt-12">
-          <Ionicons name="search-outline" color="#9ca3af" size={48} />
-          <Text className="text-gray-400 mt-2 text-center">
-            Aucun document ne correspond à « {query.trim()} ».
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 24 }}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              className="bg-white rounded-2xl p-4 mb-3 shadow-sm flex-row items-center gap-3"
-              onPress={() => router.push(`/document/${item.id}`)}
-            >
-              <View className="w-10 h-10 rounded-xl bg-[#E5FCFF] items-center justify-center">
-                <Ionicons name="document-text" color="#08415C" size={22} />
-              </View>
-              <View className="flex-1">
-                <Text
-                  className="text-[#08415C] font-semibold"
-                  numberOfLines={1}
-                >
-                  {item.filename}
-                </Text>
-                <Text className="text-gray-400 text-xs mt-1">
-                  {formatSize(item.sizeBytes)} ·{' '}
-                  {new Date(item.createdAt).toLocaleDateString('fr-FR')}
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => handleDelete(item)}
-                hitSlop={8}
-                className="p-2"
-              >
-                <Ionicons name="trash-outline" color="#ef4444" size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleView(item)}
-                hitSlop={8}
-                className="p-2"
-              >
-                <Ionicons name="eye-outline" color="#08415C" size={20} />
-              </TouchableOpacity>
+      <View className="flex-1 px-4 pt-4">
+        <View className="bg-white rounded-xl px-3 mb-4 flex-row items-center gap-2">
+          <Ionicons name="search" color="#08415C" size={18} />
+          <TextInput
+            className="flex-1 py-3 text-[#08415C]"
+            placeholder="Rechercher un document…"
+            placeholderTextColor="#9ca3af"
+            value={query}
+            onChangeText={setQuery}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => setQuery('')} hitSlop={8}>
+              <Ionicons name="close-circle" color="#9ca3af" size={18} />
             </TouchableOpacity>
           )}
-        />
-      )}
+        </View>
+
+        <TouchableOpacity
+          className="bg-[#08415C] rounded-xl items-center py-4 mb-4 flex-row justify-center gap-2"
+          onPress={handleUpload}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <>
+              <ActivityIndicator color="#fff" />
+              <Text className="text-white font-semibold">Envoi en cours…</Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name="cloud-upload" color="#fff" size={18} />
+              <Text className="text-white font-semibold">Uploader un PDF</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        {loading ? (
+          <ActivityIndicator color="#08415C" className="mt-8" />
+        ) : documents.length === 0 ? (
+          <View className="items-center mt-12">
+            <Ionicons name="document-text-outline" color="#9ca3af" size={48} />
+            <Text className="text-gray-400 mt-2 text-center">
+              Aucun document.{'\n'}Uploade un PDF de cours pour commencer !
+            </Text>
+          </View>
+        ) : filtered.length === 0 ? (
+          <View className="items-center mt-12">
+            <Ionicons name="search-outline" color="#9ca3af" size={48} />
+            <Text className="text-gray-400 mt-2 text-center">
+              Aucun document ne correspond à « {query.trim()} ».
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={filtered}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: 24 }}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                className="bg-white rounded-2xl p-4 mb-3 shadow-sm flex-row items-center gap-3"
+                onPress={() => router.push(`/document/${item.id}`)}
+              >
+                <View className="w-10 h-10 rounded-xl bg-[#E5FCFF] items-center justify-center">
+                  <Ionicons name="document-text" color="#08415C" size={22} />
+                </View>
+                <View className="flex-1">
+                  <Text
+                    className="text-[#08415C] font-semibold"
+                    numberOfLines={1}
+                  >
+                    {item.filename}
+                  </Text>
+                  <Text className="text-gray-400 text-xs mt-1">
+                    {formatSize(item.sizeBytes)} ·{' '}
+                    {new Date(item.createdAt).toLocaleDateString('fr-FR')}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => handleDelete(item)}
+                  hitSlop={8}
+                  className="p-2"
+                >
+                  <Ionicons name="trash-outline" color="#ef4444" size={20} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleView(item)}
+                  hitSlop={8}
+                  className="p-2"
+                >
+                  <Ionicons name="eye-outline" color="#08415C" size={20} />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            )}
+          />
+        )}
+      </View>
     </View>
   );
 }

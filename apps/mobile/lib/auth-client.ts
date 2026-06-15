@@ -1,4 +1,5 @@
 import { createAuthClient } from 'better-auth/react';
+import { inferAdditionalFields } from 'better-auth/client/plugins';
 import { Platform } from 'react-native';
 import { secureStorage } from './secure-storage';
 
@@ -18,4 +19,15 @@ export const authClient = createAuthClient({
       Origin: ORIGIN,
     },
   },
+  plugins: [
+    inferAdditionalFields({
+      user: {
+        firstName: { type: 'string' },
+        lastName: { type: 'string' },
+        sector: { type: 'string' },
+        establishment: { type: 'string' },
+        studyLevel: { type: 'string' },
+      },
+    }),
+  ],
 });
