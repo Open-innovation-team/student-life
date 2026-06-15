@@ -1,6 +1,8 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { PrismaClient } from '@prisma/client';
+import { unlink } from 'fs/promises';
+import { sendAccountDeletionEmail } from './mailer';
 
 const prisma = new PrismaClient();
 
@@ -37,6 +39,44 @@ export const auth = betterAuth({
       sector: {
         type: 'string',
         required: false,
+      },
+    },
+
+    // Droit à l'oubli (RGPD) : suppression définitive et immédiate du compte.
+    // Côté client : authClient.deleteUser({ password }) — Better Auth vérifie le
+    // mot de passe avant d'effacer l'utilisateur (cascade Prisma sur dépenses,
+    // budgets, documents, historique IA, etc.).
+    deleteUser: {
+      enabled: true,
+      // Avant la suppression DB : purge des fichiers sur disque (PDF + exports),
+      // que la cascade ne supprime pas.
+      beforeDelete: async (user) => {
+        const [documents, dataExports] = await Promise.all([
+          prisma.document.findMany({
+            where: { userId: user.id },
+            select: { path: true },
+          }),
+          prisma.dataExport.findMany({
+            where: { userId: user.id },
+            select: { filePath: true },
+          }),
+        ]);
+
+        const paths = [
+          ...documents.map((d) => d.path),
+          ...dataExports.map((e) => e.filePath),
+        ];
+        await Promise.all(paths.map((p) => unlink(p).catch(() => undefined)));
+      },
+      // Après suppression : email de confirmation (RGPD).
+      afterDelete: async (user) => {
+        const firstName = (user as { firstName?: string | null }).firstName;
+        await sendAccountDeletionEmail(user.email, firstName).catch((err) => {
+          console.error(
+            '[auth] Échec envoi email de confirmation de suppression',
+            err,
+          );
+        });
       },
     },
   },

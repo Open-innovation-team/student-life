@@ -26,7 +26,20 @@ model User {
   expenses      Expense[]
   budgets       Budget[]
   categories    Category[]
+  dataExports   DataExport[]
   applications  Application[]
+}
+
+model DataExport {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  filePath  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Application {

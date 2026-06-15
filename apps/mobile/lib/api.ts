@@ -236,6 +236,18 @@ export function budgetExportUrl(month: string): string {
   return `${BASE_URL}/api/budgets/export?month=${month}`;
 }
 
+export type DataExportResult = {
+  downloadUrl: string;
+  filename: string;
+  expiresAt: string;
+};
+
+// RGPD — génère l'export ZIP de toutes les données et renvoie un lien sécurisé
+// valable 24h.
+export function requestDataExport(): Promise<DataExportResult> {
+  return apiFetch('/api/account/export', { method: 'POST' });
+}
+
 /* Applications */
 
 export type Application = {
