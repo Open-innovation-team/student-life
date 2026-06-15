@@ -1,9 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 const EXPENSE_SELECT = {
   id: true,
@@ -24,8 +22,10 @@ const SORT_FIELDS: Record<ExpenseSort, string> = {
 
 @Injectable()
 export class ExpensesService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async create(userId: string, dto: CreateExpenseDto) {
-    return prisma.expense.create({
+    return this.prisma.expense.create({
       data: {
         userId,
         amountCents: dto.amountCents,
@@ -38,7 +38,7 @@ export class ExpensesService {
   }
 
   async list(userId: string, sort: ExpenseSort, order: SortOrder) {
-    return prisma.expense.findMany({
+    return this.prisma.expense.findMany({
       where: { userId },
       orderBy: { [SORT_FIELDS[sort]]: order },
       select: EXPENSE_SELECT,
@@ -51,7 +51,7 @@ export class ExpensesService {
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
 
-    const expenses = await prisma.expense.findMany({
+    const expenses = await this.prisma.expense.findMany({
       where: { userId, date: { gte: start, lt: end } },
       orderBy: { date: 'desc' },
       select: EXPENSE_SELECT,
@@ -74,7 +74,7 @@ export class ExpensesService {
     if (dto.label !== undefined) data.label = dto.label.trim() || null;
     if (dto.date !== undefined) data.date = new Date(dto.date);
 
-    return prisma.expense.update({
+    return this.prisma.expense.update({
       where: { id },
       data,
       select: EXPENSE_SELECT,
@@ -83,12 +83,14 @@ export class ExpensesService {
 
   async delete(id: string, userId: string) {
     await this.findOwned(id, userId);
-    await prisma.expense.delete({ where: { id } });
+    await this.prisma.expense.delete({ where: { id } });
     return { deleted: true };
   }
 
   private async findOwned(id: string, userId: string) {
-    const expense = await prisma.expense.findFirst({ where: { id, userId } });
+    const expense = await this.prisma.expense.findFirst({
+      where: { id, userId },
+    });
     if (!expense) throw new NotFoundException('Dépense introuvable');
     return expense;
   }

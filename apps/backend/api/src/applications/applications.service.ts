@@ -1,5 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import {
@@ -9,8 +13,6 @@ import {
   INTERVIEW_STATUSES,
   RESPONDED_STATUSES,
 } from './statuses';
-
-const prisma = new PrismaClient();
 
 const SELECT = {
   id: true,
@@ -77,8 +79,10 @@ function csvCell(value: string): string {
 
 @Injectable()
 export class ApplicationsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   async list(userId: string): Promise<ApplicationWithFollowUp[]> {
-    const apps = await prisma.application.findMany({
+    const apps = await this.prisma.application.findMany({
       where: { userId },
       orderBy: { sentAt: 'desc' },
       select: SELECT,
@@ -91,8 +95,15 @@ export class ApplicationsService {
     return { ...app, needsFollowUp: needsFollowUp(app) };
   }
 
-  create(userId: string, dto: CreateApplicationDto): Promise<Application> {
-    return prisma.application.create({
+  async create(
+    userId: string,
+    dto: CreateApplicationDto,
+  ): Promise<Application> {
+    await this.assertDocumentsOwned(userId, [
+      dto.cvDocumentId,
+      dto.lmDocumentId,
+    ]);
+    return this.prisma.application.create({
       data: {
         userId,
         company: dto.company,
@@ -114,6 +125,10 @@ export class ApplicationsService {
     dto: UpdateApplicationDto,
   ): Promise<Application> {
     const current = await this.findOwned(id, userId);
+    await this.assertDocumentsOwned(userId, [
+      dto.cvDocumentId,
+      dto.lmDocumentId,
+    ]);
 
     const data: ApplicationUpdateData = {};
     if (dto.company !== undefined) data.company = dto.company;
@@ -130,17 +145,21 @@ export class ApplicationsService {
       data.lastStatusAt = new Date();
     }
 
-    return prisma.application.update({ where: { id }, data, select: SELECT });
+    return this.prisma.application.update({
+      where: { id },
+      data,
+      select: SELECT,
+    });
   }
 
   async delete(id: string, userId: string): Promise<{ deleted: true }> {
     await this.findOwned(id, userId);
-    await prisma.application.delete({ where: { id } });
+    await this.prisma.application.delete({ where: { id } });
     return { deleted: true };
   }
 
   async stats(userId: string): Promise<ApplicationStats> {
-    const apps = await prisma.application.findMany({
+    const apps = await this.prisma.application.findMany({
       where: { userId },
       select: { status: true },
     });
@@ -166,7 +185,7 @@ export class ApplicationsService {
   }
 
   async exportCsv(userId: string): Promise<string> {
-    const apps = await prisma.application.findMany({
+    const apps = await this.prisma.application.findMany({
       where: { userId },
       orderBy: { sentAt: 'desc' },
       select: SELECT,
@@ -187,8 +206,28 @@ export class ApplicationsService {
     return [header, ...rows].join('\n');
   }
 
+  /**
+   * Vérifie que les documents (CV / lettre de motivation) référencés
+   * appartiennent bien à l'utilisateur, pour éviter de lier la candidature à
+   * un document d'un autre compte (IDOR).
+   */
+  private async assertDocumentsOwned(
+    userId: string,
+    documentIds: (string | undefined)[],
+  ): Promise<void> {
+    const ids = [...new Set(documentIds.filter((id): id is string => !!id))];
+    if (ids.length === 0) return;
+
+    const owned = await this.prisma.document.count({
+      where: { id: { in: ids }, userId },
+    });
+    if (owned !== ids.length) {
+      throw new BadRequestException('Document introuvable');
+    }
+  }
+
   private async findOwned(id: string, userId: string): Promise<Application> {
-    const app = await prisma.application.findFirst({
+    const app = await this.prisma.application.findFirst({
       where: { id, userId },
       select: SELECT,
     });

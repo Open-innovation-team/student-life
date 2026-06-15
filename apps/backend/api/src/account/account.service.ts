@@ -1,86 +1,101 @@
 import { GoneException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
 import archiver from 'archiver';
 import { randomBytes } from 'crypto';
 import { createWriteStream, mkdirSync } from 'fs';
 import { stat, unlink } from 'fs/promises';
 import { join } from 'path';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 const EXPORT_DIR = process.env.EXPORT_DIR ?? './exports';
 const EXPORT_TTL_MS = 24 * 60 * 60 * 1000; // 24h (RGPD : lien temporaire)
 
 @Injectable()
 export class AccountService {
+  constructor(private readonly prisma: PrismaService) {}
+
   /**
    * Génère un export complet des données de l'utilisateur (portabilité RGPD)
    * au format ZIP (JSON + CSV), le stocke avec un token aléatoire, et renvoie
    * un lien de téléchargement sécurisé valable 24h.
    */
   async createExport(userId: string) {
-    const [user, expenses, budgets, categories, documents] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          establishment: true,
-          studyLevel: true,
-          sector: true,
-          image: true,
-          createdAt: true,
-        },
-      }),
-      prisma.expense.findMany({
-        where: { userId },
-        orderBy: { date: 'asc' },
-        select: {
-          id: true,
-          date: true,
-          category: true,
-          label: true,
-          amountCents: true,
-          createdAt: true,
-        },
-      }),
-      prisma.budget.findMany({
-        where: { userId },
-        orderBy: [{ month: 'asc' }, { category: 'asc' }],
-        select: {
-          id: true,
-          month: true,
-          category: true,
-          amountCents: true,
-          createdAt: true,
-        },
-      }),
-      prisma.category.findMany({
-        where: { userId },
-        orderBy: { name: 'asc' },
-        select: { id: true, name: true, createdAt: true },
-      }),
-      prisma.document.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'asc' },
-        select: {
-          id: true,
-          filename: true,
-          sizeBytes: true,
-          createdAt: true,
-          summaries: {
-            select: { id: true, content: true, createdAt: true },
-            orderBy: { createdAt: 'asc' },
+    const [user, expenses, budgets, categories, documents, applications] =
+      await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            establishment: true,
+            studyLevel: true,
+            sector: true,
+            image: true,
+            createdAt: true,
           },
-          quizzes: {
-            select: { id: true, questions: true, createdAt: true },
-            orderBy: { createdAt: 'asc' },
+        }),
+        this.prisma.expense.findMany({
+          where: { userId },
+          orderBy: { date: 'asc' },
+          select: {
+            id: true,
+            date: true,
+            category: true,
+            label: true,
+            amountCents: true,
+            createdAt: true,
           },
-        },
-      }),
-    ]);
+        }),
+        this.prisma.budget.findMany({
+          where: { userId },
+          orderBy: [{ month: 'asc' }, { category: 'asc' }],
+          select: {
+            id: true,
+            month: true,
+            category: true,
+            amountCents: true,
+            createdAt: true,
+          },
+        }),
+        this.prisma.category.findMany({
+          where: { userId },
+          orderBy: { name: 'asc' },
+          select: { id: true, name: true, createdAt: true },
+        }),
+        this.prisma.document.findMany({
+          where: { userId },
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            filename: true,
+            sizeBytes: true,
+            createdAt: true,
+            summaries: {
+              select: { id: true, content: true, createdAt: true },
+              orderBy: { createdAt: 'asc' },
+            },
+            quizzes: {
+              select: { id: true, questions: true, createdAt: true },
+              orderBy: { createdAt: 'asc' },
+            },
+          },
+        }),
+        this.prisma.application.findMany({
+          where: { userId },
+          orderBy: { sentAt: 'asc' },
+          select: {
+            id: true,
+            company: true,
+            position: true,
+            platform: true,
+            status: true,
+            sentAt: true,
+            notes: true,
+            createdAt: true,
+          },
+        }),
+      ]);
 
     if (!user) throw new NotFoundException('Utilisateur introuvable');
 
@@ -121,10 +136,11 @@ export class AccountService {
       categories,
       documentsList,
       aiHistory,
+      applications,
     });
 
     const expiresAt = new Date(Date.now() + EXPORT_TTL_MS);
-    await prisma.dataExport.create({
+    await this.prisma.dataExport.create({
       data: { userId, token, filePath, expiresAt },
     });
 
@@ -141,12 +157,14 @@ export class AccountService {
    * Token expiré → fichier purgé + 410 Gone.
    */
   async getExportByToken(token: string) {
-    const record = await prisma.dataExport.findUnique({ where: { token } });
+    const record = await this.prisma.dataExport.findUnique({
+      where: { token },
+    });
     if (!record) throw new NotFoundException("Lien d'export invalide");
 
     if (record.expiresAt.getTime() < Date.now()) {
       await unlink(record.filePath).catch(() => undefined);
-      await prisma.dataExport
+      await this.prisma.dataExport
         .delete({ where: { id: record.id } })
         .catch(() => undefined);
       throw new GoneException("Ce lien d'export a expiré (valable 24h)");
@@ -157,7 +175,45 @@ export class AccountService {
       .catch(() => false);
     if (!exists) throw new GoneException("Fichier d'export introuvable");
 
-    return { path: record.filePath, filename: 'student-life-export.zip' };
+    return {
+      path: record.filePath,
+      filename: 'student-life-export.zip',
+      token: record.token,
+    };
+  }
+
+  /**
+   * Invalide un lien d'export après un téléchargement réussi (usage unique) :
+   * supprime l'enregistrement et le fichier ZIP du disque. Idempotent.
+   */
+  async invalidateExport(token: string): Promise<void> {
+    const record = await this.prisma.dataExport
+      .findUnique({ where: { token } })
+      .catch(() => null);
+    if (!record) return;
+    await unlink(record.filePath).catch(() => undefined);
+    await this.prisma.dataExport
+      .delete({ where: { id: record.id } })
+      .catch(() => undefined);
+  }
+
+  /**
+   * Purge des exports expirés (PII au repos + saturation disque) : supprime de
+   * la base et du disque tous les `dataExport` dont la date d'expiration est
+   * dépassée. Renvoie le nombre d'enregistrements supprimés.
+   */
+  async purgeExpiredExports(): Promise<number> {
+    const expired = await this.prisma.dataExport.findMany({
+      where: { expiresAt: { lt: new Date() } },
+      select: { id: true, filePath: true },
+    });
+    await Promise.all(
+      expired.map((e) => unlink(e.filePath).catch(() => undefined)),
+    );
+    const { count } = await this.prisma.dataExport.deleteMany({
+      where: { id: { in: expired.map((e) => e.id) } },
+    });
+    return count;
   }
 
   private buildZip(
@@ -169,6 +225,7 @@ export class AccountService {
       categories: unknown[];
       documentsList: DocumentRow[];
       aiHistory: unknown[];
+      applications: ApplicationRow[];
     },
   ): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -195,6 +252,11 @@ export class AccountService {
       archive.append(json(data.documentsList), { name: 'documents.json' });
       archive.append(this.documentsCsv(data.documentsList), {
         name: 'documents.csv',
+      });
+
+      archive.append(json(data.applications), { name: 'candidatures.json' });
+      archive.append(this.applicationsCsv(data.applications), {
+        name: 'candidatures.csv',
       });
 
       archive.append(json(data.aiHistory), { name: 'historique-ia.json' });
@@ -241,6 +303,21 @@ export class AccountService {
     );
     return [header, ...lines].join('\n');
   }
+
+  private applicationsCsv(rows: ApplicationRow[]): string {
+    const header = "Entreprise;Poste;Plateforme;Statut;Date d'envoi;Notes";
+    const lines = rows.map((a) =>
+      [
+        csvCell(a.company),
+        csvCell(a.position),
+        csvCell(a.platform ?? ''),
+        csvCell(a.status),
+        a.sentAt.toISOString().slice(0, 10),
+        csvCell(a.notes ?? ''),
+      ].join(';'),
+    );
+    return [header, ...lines].join('\n');
+  }
 }
 
 type ExpenseRow = {
@@ -267,6 +344,17 @@ type DocumentRow = {
   createdAt: Date;
 };
 
+type ApplicationRow = {
+  id: string;
+  company: string;
+  position: string;
+  platform: string | null;
+  status: string;
+  sentAt: Date;
+  notes: string | null;
+  createdAt: Date;
+};
+
 function csvCell(value: string): string {
   return value.replace(/;/g, ',').replace(/\r?\n/g, ' ');
 }
@@ -281,11 +369,8 @@ Ce dossier contient l'ensemble des données associées à votre compte :
 - budgets.json/.csv    : vos budgets mensuels
 - categories.json      : vos catégories personnalisées
 - documents.json/.csv  : la liste de vos documents importés
+- candidatures.json/.csv : vos candidatures et leur suivi
 - historique-ia.json   : vos résumés et QCM générés par l'IA
-
-Remarque : les modules « candidatures » et « planning / tâches » mentionnés
-dans certains gabarits RGPD ne sont pas disponibles dans cette version de
-l'application — aucune donnée de ce type n'existe donc pour votre compte.
 
 Les fichiers PDF eux-mêmes ne sont pas inclus dans cet export ; seule la liste
 des documents (nom, taille, date) est fournie.

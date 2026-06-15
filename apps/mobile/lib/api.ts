@@ -243,9 +243,17 @@ export type DataExportResult = {
 };
 
 // RGPD — génère l'export ZIP de toutes les données et renvoie un lien sécurisé
-// valable 24h.
-export function requestDataExport(): Promise<DataExportResult> {
-  return apiFetch('/api/account/export', { method: 'POST' });
+// valable 24h. Le backend peut renvoyer une URL relative (si BETTER_AUTH_URL
+// n'est pas configurée) : on la préfixe avec BASE_URL pour obtenir un lien
+// absolu et joignable depuis l'appareil.
+export async function requestDataExport(): Promise<DataExportResult> {
+  const result = await apiFetch<DataExportResult>('/api/account/export', {
+    method: 'POST',
+  });
+  const downloadUrl = /^https?:\/\//.test(result.downloadUrl)
+    ? result.downloadUrl
+    : `${BASE_URL}${result.downloadUrl}`;
+  return { ...result, downloadUrl };
 }
 
 /* Applications */
@@ -313,4 +321,39 @@ export function deleteApplication(id: string): Promise<{ deleted: boolean }> {
 
 export function applicationsExportUrl(): string {
   return `${BASE_URL}/api/applications/export`;
+}
+
+/* Interview preparation */
+
+export type InterviewQuestion = {
+  id: string;
+  category: string;
+  question: string;
+  answer: string | null;
+  source: 'catalog' | 'ai';
+};
+
+export function getInterviewPrep(
+  applicationId: string,
+): Promise<InterviewQuestion[]> {
+  return apiFetch(`/api/applications/${applicationId}/interview`);
+}
+
+export function saveInterviewAnswer(
+  applicationId: string,
+  questionId: string,
+  answer: string,
+): Promise<InterviewQuestion> {
+  return apiFetch(
+    `/api/applications/${applicationId}/interview/${questionId}`,
+    jsonBody('PATCH', { answer }),
+  );
+}
+
+export function generateInterviewQuestions(
+  applicationId: string,
+): Promise<InterviewQuestion[]> {
+  return apiFetch(`/api/applications/${applicationId}/interview/generate`, {
+    method: 'POST',
+  });
 }
