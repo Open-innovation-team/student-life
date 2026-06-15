@@ -314,3 +314,38 @@ export function deleteApplication(id: string): Promise<{ deleted: boolean }> {
 export function applicationsExportUrl(): string {
   return `${BASE_URL}/api/applications/export`;
 }
+
+/* Interview preparation */
+
+export type InterviewQuestion = {
+  id: string;
+  category: string;
+  question: string;
+  answer: string | null;
+  source: 'catalog' | 'ai';
+};
+
+export function getInterviewPrep(
+  applicationId: string,
+): Promise<InterviewQuestion[]> {
+  return apiFetch(`/api/applications/${applicationId}/interview`);
+}
+
+export function saveInterviewAnswer(
+  applicationId: string,
+  questionId: string,
+  answer: string,
+): Promise<InterviewQuestion> {
+  return apiFetch(
+    `/api/applications/${applicationId}/interview/${questionId}`,
+    jsonBody('PATCH', { answer }),
+  );
+}
+
+export function generateInterviewQuestions(
+  applicationId: string,
+): Promise<InterviewQuestion[]> {
+  return apiFetch(`/api/applications/${applicationId}/interview/generate`, {
+    method: 'POST',
+  });
+}

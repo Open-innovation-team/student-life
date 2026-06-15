@@ -11,6 +11,11 @@ export type QuizQuestion = {
   explication: string;
 };
 
+export type GeneratedInterviewQuestion = {
+  category: string;
+  question: string;
+};
+
 const GENERATION_TIMEOUT_MS = 120_000;
 const MAX_CONTEXT_CHARS = 8_000;
 const QUIZ_MAX_ATTEMPTS = 3;
@@ -165,6 +170,57 @@ ${this.truncate(text)}
     return best.slice(0, nbQuestions);
   }
 
+  async generateInterviewQuestions(
+    position: string,
+    company: string | null,
+  ): Promise<GeneratedInterviewQuestion[]> {
+    const target = company ? `${position} chez ${company}` : position;
+    const prompt = `Tu es un coach en recrutement. Génère EXACTEMENT 5 questions d'entretien ciblées pour le poste suivant : "${target}".
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, au format :
+{
+  "questions": [
+    { "category": "…", "question": "…" }
+  ]
+}
+Règles :
+- le tableau "questions" doit contenir EXACTEMENT 5 objets ;
+- "category" vaut obligatoirement l'une de ces valeurs : "Motivation", "Comportemental", "Technique", "Mise en situation" ;
+- les questions doivent être en français et spécifiques au poste visé ;
+- pas de numérotation, pas de texte hors du JSON.`;
+    const raw = await this.generate(prompt, {
+      json: true,
+      numPredict: 1024,
+      temperature: 0.5,
+    });
+    const questions = this.parseInterviewQuestions(raw);
+    if (questions.length === 0) {
+      throw new UnprocessableEntityException(
+        'Génération des questions échouée, réessayez',
+      );
+    }
+    return questions.slice(0, 5);
+  }
+
+  private parseInterviewQuestions(raw: string): GeneratedInterviewQuestion[] {
+    const items = this.extractJsonArray(raw);
+    if (!items) return [];
+    return items.filter((q): q is GeneratedInterviewQuestion =>
+      this.isValidInterviewQuestion(q),
+    );
+  }
+
+  private isValidInterviewQuestion(
+    q: unknown,
+  ): q is GeneratedInterviewQuestion {
+    if (typeof q !== 'object' || q === null) return false;
+    const obj = q as Record<string, unknown>;
+    return (
+      typeof obj.category === 'string' &&
+      typeof obj.question === 'string' &&
+      obj.question.trim().length > 0
+    );
+  }
+
   private truncate(text: string): string {
     return text.length > MAX_CONTEXT_CHARS
       ? text.slice(0, MAX_CONTEXT_CHARS)
@@ -174,21 +230,28 @@ ${this.truncate(text)}
   // Renvoie les questions valides extraites du brut, ou [] si rien
   // d'exploitable (la boucle de retry de generateQuiz décide ensuite).
   private parseQuiz(raw: string): QuizQuestion[] {
+    const items = this.extractJsonArray(raw);
+    if (!items) return this.logParseFailure(raw);
+    return items.filter((q) => this.isValidQuestion(q));
+  }
+
+  // Extrait un tableau JSON d'une réponse brute : parse direct, sinon
+  // réparation du bloc [...], puis dé-wrapping d'un éventuel objet
+  // enveloppe { questions: [...] }. Renvoie null si rien d'exploitable.
+  private extractJsonArray(raw: string): unknown[] | null {
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
     } catch {
-      // tentative de réparation : extraire le bloc [...]
       const match = raw.match(/\[[\s\S]*\]/);
-      if (!match) return this.logParseFailure(raw);
+      if (!match) return null;
       try {
         parsed = JSON.parse(match[0]);
       } catch {
-        return this.logParseFailure(raw);
+        return null;
       }
     }
 
-    // format: "json" peut renvoyer un objet enveloppe { questions: [...] }
     if (
       !Array.isArray(parsed) &&
       typeof parsed === 'object' &&
@@ -199,9 +262,7 @@ ${this.truncate(text)}
       if (arr) parsed = arr;
     }
 
-    if (!Array.isArray(parsed)) return this.logParseFailure(raw);
-
-    return parsed.filter((q) => this.isValidQuestion(q));
+    return Array.isArray(parsed) ? parsed : null;
   }
 
   private logParseFailure(raw: string): QuizQuestion[] {
