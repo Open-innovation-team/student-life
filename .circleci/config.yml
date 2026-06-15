@@ -2,9 +2,9 @@ version: 2.1
 
 orbs:
   node: circleci/node@5.2.0
+  sonarcloud: sonarsource/sonarcloud@2.0.0
 
 jobs:
-
   block-dev-to-main:
     docker:
       - image: cimg/base:stable
@@ -109,6 +109,39 @@ jobs:
               | tar -xz gitleaks
             ./gitleaks detect --source . --no-banner --redact
 
+  sonarqube:
+    docker:
+      - image: cimg/node:22.12
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+      # (optionnel mais recommandé : build + tests avec couverture
+      #  pour que Sonar récupère la coverage des packages)
+      - run:
+          name: Déterminer branche vs PR pour Sonar
+          command: |
+            # On cherche une PR ouverte dont la source = la branche courante
+            PR_DATA=$(curl -s \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls?head=$CIRCLE_PROJECT_USERNAME:$CIRCLE_BRANCH&state=open")
+            PR_NUMBER=$(echo "$PR_DATA" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d[0]['number'] if d else '')")
+            BASE_BRANCH=$(echo "$PR_DATA" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d[0]['base']['ref'] if d else '')")
+
+            if [ -n "$PR_NUMBER" ]; then
+              echo "Analyse PR #$PR_NUMBER ($CIRCLE_BRANCH -> $BASE_BRANCH)"
+              {
+                echo "sonar.pullrequest.key=$PR_NUMBER"
+                echo "sonar.pullrequest.branch=$CIRCLE_BRANCH"
+                echo "sonar.pullrequest.base=$BASE_BRANCH"
+              } >> sonar-project.properties
+            else
+              echo "Analyse de branche : $CIRCLE_BRANCH"
+              echo "sonar.branch.name=$CIRCLE_BRANCH" >> sonar-project.properties
+            fi
+      - sonarcloud/scan
+
 workflows:
   ci:
     jobs:
@@ -117,3 +150,4 @@ workflows:
       - test-web
       - test-mobile
       - security-scan
+      - sonarqube
