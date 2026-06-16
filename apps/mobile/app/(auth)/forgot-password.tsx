@@ -9,33 +9,39 @@ import {
   ScrollView,
 } from 'react-native';
 import { Link, router } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { authClient } from '../../lib/auth-client';
-import { useRef } from 'react';
-import { TextInput as RNTextInput } from 'react-native';
 
-export default function LoginScreen() {
-  const passwordRef = useRef<RNTextInput>(null);
-
+export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = useCallback(async () => {
-    if (!email || !password) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+  const handleSubmit = useCallback(async () => {
+    if (!email) {
+      Alert.alert('Erreur', 'Veuillez saisir votre email');
       return;
     }
     setLoading(true);
-    const { data, error } = await authClient.signIn.email({ email, password });
+    // Genere le bon deep link selon le runtime : studentlife://reset-password
+    // (build standalone) ou exp://.../--/reset-password (Expo Go).
+    const redirectTo = Linking.createURL('/reset-password');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (authClient as any).requestPasswordReset({
+      email,
+      redirectTo,
+    });
     setLoading(false);
 
-    if (error) {
-      Alert.alert('Erreur de connexion', error.message);
-      return;
+    // Securite : on n'indique jamais si l'email existe ou non.
+    if (error && error.status !== 200) {
+      console.log('requestPasswordReset error:', error);
     }
-    console.log('Connecté :', data);
-    router.replace('/(tabs)');
-  }, [email, password]);
+    Alert.alert(
+      'Vérifiez vos emails',
+      'Si un compte est associé à cette adresse, un lien de réinitialisation vient de vous être envoyé.',
+      [{ text: 'OK', onPress: () => router.replace('/(auth)/login') }],
+    );
+  }, [email]);
 
   return (
     <ScrollView
@@ -67,14 +73,14 @@ export default function LoginScreen() {
             style={{ fontSize: Platform.OS === 'web' ? 28 : 34 }}
             className="text-[#08415C] font-bold"
           >
-            Connexion
+            Mot de passe oublié
           </Text>
-          <Text className="text-gray-400 text-sm mt-1">
-            Content de te revoir !
+          <Text className="text-gray-400 text-sm mt-1 text-center">
+            Saisis ton email pour recevoir un lien de réinitialisation.
           </Text>
         </View>
 
-        {/* Inputs */}
+        {/* Input */}
         <View className="gap-3">
           <TextInput
             className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
@@ -88,24 +94,8 @@ export default function LoginScreen() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            returnKeyType="next"
-            onSubmitEditing={() => passwordRef.current?.focus()}
-            submitBehavior="submit"
-          />
-          <TextInput
-            ref={passwordRef}
-            className="bg-[#E5FCFF] border border-gray-200 rounded-xl px-4 text-gray-800"
-            style={{
-              paddingVertical: Platform.OS === 'web' ? 14 : 18,
-              fontSize: Platform.OS === 'web' ? 14 : 16,
-            }}
-            placeholder="Mot de passe"
-            placeholderTextColor="#9ca3af"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
             returnKeyType="done"
-            onSubmitEditing={handleLogin}
+            onSubmitEditing={handleSubmit}
           />
         </View>
 
@@ -113,32 +103,22 @@ export default function LoginScreen() {
         <TouchableOpacity
           className={`bg-[#08415C] rounded-xl items-center mt-6 ${loading ? 'opacity-60' : ''}`}
           style={{ paddingVertical: Platform.OS === 'web' ? 14 : 18 }}
-          onPress={handleLogin}
+          onPress={handleSubmit}
           disabled={loading}
         >
           <Text
             style={{ fontSize: Platform.OS === 'web' ? 14 : 17 }}
             className="text-white font-semibold"
           >
-            {loading ? 'Connexion...' : 'Se connecter'}
+            {loading ? 'Envoi...' : 'Envoyer le lien'}
           </Text>
         </TouchableOpacity>
 
-        {/* Mot de passe oublie */}
-        <View className="items-center mt-4">
-          <Link href="/(auth)/forgot-password">
-            <Text className="text-[#08415C] text-sm">
-              Mot de passe oublié ?
-            </Text>
-          </Link>
-        </View>
-
-        {/* Lien */}
+        {/* Lien retour */}
         <View className="items-center mt-6">
-          <Link href="/(auth)/register">
+          <Link href="/(auth)/login">
             <Text className="text-[#08415C] text-sm">
-              Pas encore de compte ?{' '}
-              <Text className="font-bold">S&apos;inscrire</Text>
+              Retour à la <Text className="font-bold">connexion</Text>
             </Text>
           </Link>
         </View>
